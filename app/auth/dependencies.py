@@ -45,9 +45,19 @@ def get_current_user(
     return user
 
 def get_current_admin_user(current_user: User = Depends(get_current_user)):
-    if not current_user.is_admin:
+    # Check is_admin field from User model (legacy)
+    is_admin = getattr(current_user, "is_admin", False)
+    
+    # Check RBAC roles
+    has_role = False
+    if hasattr(current_user, "roles"):
+        role_names = [r.role for r in current_user.roles]
+        if "admin" in role_names or "super_admin" in role_names:
+            has_role = True
+
+    if not (is_admin or has_role):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
+            detail="Not authorized"
         )
     return current_user

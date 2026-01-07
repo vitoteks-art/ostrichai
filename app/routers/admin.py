@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from ..database import get_db
-from ..auth.dependencies import get_current_user
+from ..auth.dependencies import get_current_user, get_current_admin_user
 from ..models import User, PaymentTransaction, UserSubscription, SubscriptionPlan
 from ..schemas.admin import (
     UserAdminView, TransactionAdminView, AdminStats, 
@@ -21,21 +21,6 @@ from ..schemas.admin_resources import (
 
 router = APIRouter()
 
-def get_admin_user(current_user: User = Depends(get_current_user)):
-    # Check is_admin field from User model (legacy) or roles relationship
-    is_admin = getattr(current_user, "is_admin", False)
-    is_superuser = getattr(current_user, "is_superuser", False)
-    
-    # Check RBAC roles
-    has_role = False
-    if hasattr(current_user, "roles"):
-        role_names = [r.role for r in current_user.roles]
-        if "admin" in role_names or "super_admin" in role_names:
-            has_role = True
-
-    if not (is_admin or is_superuser or has_role):
-         raise HTTPException(status_code=403, detail="Not authorized")
-    return current_user
 
 @router.get("/subscriptions", response_model=List[SubscriptionAdminView])
 async def list_subscriptions(
@@ -294,7 +279,7 @@ async def update_system_setting(
 @router.post("/export-data")
 async def export_data(
     request: dict, # Simplified for now
-    admin: User = Depends(get_admin_user)
+    admin: User = Depends(get_current_admin_user)
 ):
     # Mock export
     return {"success": True, "requestId": str(uuid.uuid4())}
