@@ -16,6 +16,9 @@ async def get_profile(current_user: User = Depends(get_current_user), db: Sessio
     profile = db.query(Profile).filter(Profile.id == current_user.id).first()
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
+    
+    # Add roles from User model
+    profile.roles = [r.role for r in current_user.roles]
     return profile
 
 @router.put("/profile", response_model=ProfileResponse)
@@ -34,6 +37,9 @@ async def update_profile(
 
     db.commit()
     db.refresh(profile)
+    
+    # Add roles from User model
+    profile.roles = [r.role for r in current_user.roles]
     return profile
 
 @router.post("/profile/avatar")

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 class ProfileUpdate(BaseModel):
@@ -18,6 +18,7 @@ class ProfileResponse(BaseModel):
     location: Optional[str]
     bio: Optional[str]
     avatar_url: Optional[str]
+    roles: Optional[List[str]] = []
     created_at: datetime
     updated_at: datetime
 
