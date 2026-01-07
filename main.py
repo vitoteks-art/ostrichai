@@ -48,26 +48,5 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
-
-import sys
-import json
-from fastapi import Request
-
-@app.middleware("http")
-async def debug_logging_middleware(request: Request, call_next):
-    # Log Request
-    print(f"FAILED REQ: {request.method} {request.url}", file=sys.stderr, flush=True)
-    try:
-        body = await request.body()
-        if body:
-            print(f"BODY: {body.decode()}", file=sys.stderr, flush=True)
-    except:
-        pass
-
-    response = await call_next(request)
-
-    # Log Response
-    print(f"RESP: {response.status_code}", file=sys.stderr, flush=True)
-    return response
     
 # Trigger reload

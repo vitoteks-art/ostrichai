@@ -1,5 +1,7 @@
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Union
+from pydantic import field_validator
+import json
 
 class Settings(BaseSettings):
     # Database
@@ -12,7 +14,25 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
 
     # CORS
-    allowed_origins: List[str] = ["http://localhost:3000", "http://localhost:5173"]
+    allowed_origins: Union[List[str], str] = ["http://localhost:3000", "http://localhost:5173"]
+
+    @field_validator("allowed_origins", mode="before")
+    @classmethod
+    def parse_allowed_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        if isinstance(v, list):
+            return v
+        if isinstance(v, str):
+            # Try to parse as JSON first (handles ["a", "b"])
+            try:
+                parsed = json.loads(v)
+                if isinstance(parsed, list):
+                    return parsed
+            except (json.JSONDecodeError, ValueError):
+                pass
+            
+            # Fallback to comma-separated string (handles "a, b")
+            return [item.strip() for item in v.split(",") if item.strip()]
+        return v
 
     # Payment providers
     flutterwave_secret_key: str = ""
