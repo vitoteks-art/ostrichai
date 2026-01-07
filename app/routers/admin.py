@@ -28,7 +28,7 @@ async def list_subscriptions(
     limit: int = 100,
     search: Optional[str] = None,
     status: Optional[str] = None,
-    admin: User = Depends(get_admin_user),
+    admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     query = db.query(UserSubscription)
@@ -45,7 +45,7 @@ async def list_subscriptions(
 @router.post("/subscriptions/assign", response_model=SubscriptionAdminView)
 async def assign_subscription(
     request: SubscriptionAssignRequest,
-    admin: User = Depends(get_admin_user),
+    admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     # Check if user exists
@@ -90,7 +90,7 @@ async def assign_subscription(
 async def extend_subscription(
     subscription_id: UUID,
     request: SubscriptionExtendRequest,
-    admin: User = Depends(get_admin_user),
+    admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     subscription = db.query(UserSubscription).filter(UserSubscription.id == subscription_id).first()
@@ -110,7 +110,7 @@ async def extend_subscription(
 
 @router.post("/subscriptions/process-expired")
 async def process_expired_subscriptions(
-    admin: User = Depends(get_admin_user),
+    admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     now = datetime.now()
@@ -129,7 +129,7 @@ async def process_expired_subscriptions(
 async def update_user_profile(
     user_id: UUID,
     profile_update: UserProfileUpdate,
-    admin: User = Depends(get_admin_user),
+    admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.id == user_id).first()
@@ -148,7 +148,7 @@ async def update_user_profile(
 async def toggle_user_status(
     user_id: UUID,
     status_update: UserStatusUpdate,
-    admin: User = Depends(get_admin_user),
+    admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.id == user_id).first()
@@ -163,7 +163,7 @@ async def toggle_user_status(
 @router.delete("/users/{user_id}")
 async def delete_user(
     user_id: UUID,
-    admin: User = Depends(get_admin_user),
+    admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     # Only super admins should ideally delete users
@@ -180,7 +180,7 @@ async def delete_user(
 async def list_users(
     skip: int = 0,
     limit: int = 100,
-    admin: User = Depends(get_admin_user),
+    admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     users = db.query(User).offset(skip).limit(limit).all()
@@ -190,7 +190,7 @@ async def list_users(
 async def list_transactions(
     skip: int = 0,
     limit: int = 100,
-    admin: User = Depends(get_admin_user),
+    admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     transactions = db.query(PaymentTransaction).offset(skip).limit(limit).all()
@@ -198,7 +198,7 @@ async def list_transactions(
 
 @router.get("/stats", response_model=AdminStats)
 async def get_stats(
-    admin: User = Depends(get_admin_user),
+    admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     user_count = db.query(User).count()
@@ -215,7 +215,7 @@ async def get_stats(
 async def get_audit_log(
     skip: int = 0,
     limit: int = 50,
-    admin: User = Depends(get_admin_user),
+    admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     return db.query(AdminAuditLog).order_by(AdminAuditLog.created_at.desc()).offset(skip).limit(limit).all()
@@ -223,7 +223,7 @@ async def get_audit_log(
 # --- System Alerts ---
 @router.get("/alerts", response_model=List[SystemAlertResponse])
 async def get_system_alerts(
-    admin: User = Depends(get_admin_user),
+    admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     return db.query(SystemAlert).order_by(SystemAlert.created_at.desc()).all()
@@ -231,7 +231,7 @@ async def get_system_alerts(
 @router.post("/alerts", response_model=SystemAlertResponse)
 async def create_system_alert(
     alert: SystemAlertCreate,
-    admin: User = Depends(get_admin_user),
+    admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     db_alert = SystemAlert(**alert.dict())
@@ -243,7 +243,7 @@ async def create_system_alert(
 # --- System Settings ---
 @router.get("/settings", response_model=List[SystemSettingResponse])
 async def get_system_settings(
-    admin: User = Depends(get_admin_user),
+    admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     return db.query(SystemSetting).all()
@@ -252,7 +252,7 @@ async def get_system_settings(
 async def update_system_setting(
     key: str,
     setting_update: SystemSettingUpdate,
-    admin: User = Depends(get_admin_user),
+    admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     db_setting = db.query(SystemSetting).filter(SystemSetting.key == key).first()
@@ -288,7 +288,7 @@ async def export_data(
 @router.get("/users/{user_id}/role")
 async def get_user_role(
     user_id: UUID,
-    admin: User = Depends(get_admin_user),
+    admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.id == user_id).first()
@@ -300,7 +300,7 @@ async def get_user_role(
 async def set_user_role(
     user_id: UUID,
     role_data: Dict[str, str], # {"role": "admin" | "user"}
-    admin: User = Depends(get_admin_user),
+    admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     if not admin.is_superuser:
