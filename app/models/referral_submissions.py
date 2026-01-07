@@ -18,6 +18,6 @@ class ReferralFormSubmission(Base):
     form_type = Column(String, nullable=False, default='contact')
     status = Column(String, nullable=False, default='pending')  # 'pending', 'contacted', 'converted', 'rejected'
     consent_given = Column(Boolean, default=False)
-    metadata = Column(JSON, default=dict) # for storing notes etc
+    submission_metadata = Column(JSON, default=dict) # for storing notes etc
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

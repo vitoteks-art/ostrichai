@@ -221,7 +221,7 @@ async def record_conversion(
         points_awarded=points_to_award,
         conversion_value=request.value,
         status='pending',
-        metadata=request.metadata
+        conversion_metadata=request.metadata
     )
     db.add(conversion)
     
@@ -383,7 +383,7 @@ async def update_submission_status(
         
     submission.status = update.status
     if update.notes:
-        submission.metadata = {**(submission.metadata or {}), "notes": update.notes}
+        submission.submission_metadata = {**(submission.submission_metadata or {}), "notes": update.notes}
         
     db.commit()
     db.refresh(submission)
