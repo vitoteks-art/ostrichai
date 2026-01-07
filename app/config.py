@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     smtp_port: int = 587
     smtp_username: str = ""
     smtp_password: str = ""
+    smtp_from_email: str = ""
 
     # Supabase
     vite_supabase_url: str = ""
@@ -45,9 +46,12 @@ class Settings(BaseSettings):
 
     # Social Media
     vite_facebook_app_id: str = ""
+    facebook_app_id: str = ""
     facebook_app_secret: str = ""
     vite_linkedin_client_id: str = ""
     linkedin_client_secret: str = ""
+    instagram_app_id: str = ""
+    instagram_app_secret: str = ""
 
     # AI / Other
     vite_kie_api_key: str = ""
