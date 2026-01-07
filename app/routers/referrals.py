@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import User, ReferralLink, ReferralConversion, ReferralCampaign, UserPoints, ReferralClick, RewardRedemption, ReferralFormSubmission
-from ..schemas.referrals import ReferralStatsResponse, ReferralLinkResponse, ReferralCampaignResponse, UserPointsResponse, PublicLandingResponse, ReferralClickCreate, ReferralConversionCreate, RewardRedeemRequest, RewardRedeemResponse, ReferralFormSubmissionCreate
+from ..schemas.referrals import ReferralStatsResponse, ReferralLinkResponse, ReferralCampaignResponse, UserPointsResponse, PublicLandingResponse, ReferralClickCreate, ReferralConversionCreate, RewardRedeemRequest, RewardRedeemResponse, ReferralFormSubmissionCreate, ReferralCampaignCreate, ReferralCampaignUpdate
 from ..auth.dependencies import get_current_user, get_current_admin_user as get_admin_user
 from typing import List, Optional, Dict, Any
 from uuid import UUID
