@@ -182,6 +182,21 @@ async def list_users(
     db: Session = Depends(get_db)
 ):
     users = db.query(User).offset(skip).limit(limit).all()
+    
+    # Enrich users with their highest role for the view
+    for user in users:
+        user_role = "user"
+        if hasattr(user, "roles") and user.roles:
+            role_names = [r.role for r in user.roles]
+            if "super_admin" in role_names:
+                user_role = "super_admin"
+            elif "admin" in role_names:
+                user_role = "admin"
+        elif user.is_admin:
+            user_role = "admin"
+        
+        user.role = user_role
+        
     return users
 
 @router.get("/transactions", response_model=List[TransactionAdminView])

@@ -6,9 +6,12 @@ from uuid import UUID
 class UserAdminView(BaseModel):
     id: UUID
     email: EmailStr
+    full_name: Optional[str] = None
     is_active: bool
+    is_admin: bool
     is_superuser: bool
     created_at: datetime
+    role: str = "user"
     # Add other relevant fields for admin view
 
     class Config:
