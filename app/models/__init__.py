@@ -21,6 +21,7 @@ from .referral_analytics import ReferralAnalytics
 from .social_media import SocialMediaAccount, SocialMediaPost, ScheduledPost
 from .campaigns import FacebookAdAccount, FacebookCampaign
 from .user_session import UserSession
+from .referral_submissions import ReferralFormSubmission
 
 # Import all models for Alembic
 __all__ = [
@@ -48,5 +49,6 @@ __all__ = [
     "ScheduledPost",
     "FacebookAdAccount",
     "FacebookCampaign",
-    "UserSession"
+    "UserSession",
+    "ReferralFormSubmission"
 ]
