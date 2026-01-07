@@ -21,17 +21,15 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Debug: Print settings on startup
-print("--- BACKEND STARTUP ---", flush=True)
-print(f"ALLOWED_ORIGINS: {settings.allowed_origins}", flush=True)
-print("-----------------------", flush=True)
-
 # Configure CORS
-# We temporarily allow all to debug the 400 error
+origins = settings.allowed_origins
+if isinstance(origins, str):
+    origins = [o.strip() for o in origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False, # Credentials can't be used with "*"
+    allow_origins=origins if origins else ["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -54,19 +52,5 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
-
-from fastapi import Request
-import sys
-
-@app.middleware("http")
-async def cors_debug_middleware(request: Request, call_next):
-    if request.method == "OPTIONS":
-        origin = request.headers.get("origin")
-        method = request.headers.get("access-control-request-method")
-        headers = request.headers.get("access-control-request-headers")
-        print(f"DEBUG OPTIONS: Origin={origin}, Method={method}, Headers={headers}", file=sys.stderr, flush=True)
-    
-    response = await call_next(request)
-    return response
     
 # Trigger reload
