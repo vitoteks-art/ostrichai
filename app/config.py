@@ -14,7 +14,12 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
 
     # CORS
-    allowed_origins: Union[List[str], str] = ["http://localhost:3000", "http://localhost:5173"]
+    allowed_origins: Union[List[str], str] = [
+        "https://app.getostrichai.com",
+        "http://app.getostrichai.com",
+        "http://localhost:3000",
+        "http://localhost:5173"
+    ]
 
     @field_validator("allowed_origins", mode="before")
     @classmethod
