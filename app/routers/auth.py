@@ -9,7 +9,7 @@ from ..auth.dependencies import get_current_user
 from ..utils.email import send_verification_email
 import random
 import string
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 router = APIRouter()
 
@@ -25,7 +25,7 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     
     # Generate verification code
     verification_code = ''.join(random.choices(string.digits, k=6))
-    verification_expiry = datetime.utcnow() + timedelta(minutes=10)
+    verification_expiry = datetime.now(timezone.utc) + timedelta(minutes=10)
     
     db_user = User(
         email=user_data.email,
@@ -107,7 +107,7 @@ async def verify_email(request: EmailVerificationRequest, db: Session = Depends(
     if not user.verification_code or user.verification_code != request.code:
         raise HTTPException(status_code=400, detail="Invalid verification code")
     
-    if user.verification_code_expires_at and user.verification_code_expires_at < datetime.utcnow():
+    if user.verification_code_expires_at and user.verification_code_expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="Verification code has expired")
     
     # Mark as verified
@@ -131,7 +131,7 @@ async def resend_verification(email: str = Query(...), db: Session = Depends(get
     # Generate new code
     verification_code = ''.join(random.choices(string.digits, k=6))
     user.verification_code = verification_code
-    user.verification_code_expires_at = datetime.utcnow() + timedelta(minutes=10)
+    user.verification_code_expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
     db.commit()
     
     # Send email
