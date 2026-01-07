@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional, Dict, Any
 from ..database import get_db
 from ..auth.dependencies import get_current_user, get_current_admin_user
-from ..models import User, PaymentTransaction, UserSubscription, SubscriptionPlan
+from ..models import User, PaymentTransaction, UserSubscription, SubscriptionPlan, UserRole
 from ..schemas.admin import (
     UserAdminView, TransactionAdminView, AdminStats, 
     UserProfileUpdate, UserStatusUpdate, 
@@ -11,8 +11,6 @@ from ..schemas.admin import (
 )
 from uuid import UUID
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any
-from ..models import User, PaymentTransaction, UserSubscription, SubscriptionPlan
 from ..models.admin_resources import AdminAuditLog, SystemAlert, SystemSetting
 from ..schemas.admin_resources import (
     AdminAuditLogResponse, SystemAlertCreate, SystemAlertResponse,
@@ -294,7 +292,20 @@ async def get_user_role(
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return {"role": "admin" if user.is_admin else "user"}
+    
+    # Check roles table first
+    role = "user"
+    if hasattr(user, "roles") and user.roles:
+        # Get highest role
+        role_names = [r.role for r in user.roles]
+        if "super_admin" in role_names:
+            role = "super_admin"
+        elif "admin" in role_names:
+            role = "admin"
+    elif user.is_admin:
+        role = "admin"
+        
+    return {"role": role}
 
 @router.post("/users/{user_id}/role")
 async def set_user_role(
@@ -312,11 +323,27 @@ async def set_user_role(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    new_role = role_data.get("role")
-    if new_role == "admin":
+    new_role_name = role_data.get("role")
+    if new_role_name not in ["super_admin", "admin", "user"]:
+        raise HTTPException(status_code=400, detail="Invalid role")
+
+    # Update legacy is_admin flag
+    if new_role_name in ["admin", "super_admin"]:
         user.is_admin = True
-    elif new_role == "user":
+    else:
         user.is_admin = False
+    
+    # Update or Create entry in user_roles table
+    # Clear existing roles for this user (simplification for this specific endpoint)
+    db.query(UserRole).filter(UserRole.user_id == user_id).delete()
+    
+    if new_role_name != "user":
+        new_role = UserRole(
+            user_id=user_id,
+            role=new_role_name,
+            assigned_by=admin.id
+        )
+        db.add(new_role)
     
     db.commit()
     return {"success": True}
