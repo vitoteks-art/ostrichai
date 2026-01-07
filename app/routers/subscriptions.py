@@ -12,15 +12,14 @@ async def get_plans(db: Session = Depends(get_db)):
     plans = db.query(SubscriptionPlan).filter(SubscriptionPlan.active == True).order_by(SubscriptionPlan.price_cents).all()
     return plans
 
-@router.get("/my-subscription", response_model=UserSubscriptionResponse)
+from typing import Optional
+
+@router.get("/my-subscription", response_model=Optional[UserSubscriptionResponse])
 async def get_my_subscription(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     subscription = db.query(UserSubscription).filter(
         UserSubscription.user_id == current_user.id,
         UserSubscription.status.in_(['active', 'pending_approval', 'expired'])
     ).order_by(UserSubscription.created_at.desc()).first()
-
-    if not subscription:
-        raise HTTPException(status_code=404, detail="No active subscription found")
 
     return subscription
 
