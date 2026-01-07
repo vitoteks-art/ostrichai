@@ -21,10 +21,19 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Debug: Print settings on startup
+print("--- BACKEND STARTUP ---", flush=True)
+print(f"ALLOWED_ORIGINS: {settings.allowed_origins}", flush=True)
+print("-----------------------", flush=True)
+
 # Configure CORS
+origins = settings.allowed_origins
+if isinstance(origins, str):
+    origins = [o.strip() for o in origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins,
+    allow_origins=origins if origins else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
