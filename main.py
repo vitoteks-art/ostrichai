@@ -12,6 +12,8 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     yield
 
+from app.config import settings
+
 app = FastAPI(
     title="OstrichAI API",
     description="Backend API for OstrichAI platform",
@@ -22,7 +24,7 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173", "https://getostrichai.com"],  # Add your frontend URLs
+    allow_origins=settings.allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
