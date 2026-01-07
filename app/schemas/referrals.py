@@ -38,10 +38,6 @@ class UserPointsResponse(BaseModel):
     current_tier: str
     last_activity_at: datetime
 
-class PublicLandingResponse(BaseModel):
-    campaign: ReferralCampaignResponse
-    referrer: Optional[Dict[str, Any]] = None
-
 class ReferralCampaignResponse(BaseModel):
     id: str
     name: str
@@ -53,6 +49,10 @@ class ReferralCampaignResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class PublicLandingResponse(BaseModel):
+    campaign: ReferralCampaignResponse
+    referrer: Optional[Dict[str, Any]] = None
 
 class ReferralClickCreate(BaseModel):
     referral_code: str
