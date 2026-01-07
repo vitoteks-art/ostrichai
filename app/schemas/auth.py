@@ -17,6 +17,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     full_name: Optional[str]
     is_active: bool
+    is_verified: bool
     created_at: datetime
 
     class Config:
@@ -25,3 +26,7 @@ class UserResponse(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class EmailVerificationRequest(BaseModel):
+    email: EmailStr
+    code: str

@@ -60,12 +60,9 @@ class Settings(BaseSettings):
     polar_secret_key: str = ""
     vite_polar_webhook_secret: str = ""
 
-    # Email
-    smtp_server: str = ""
-    smtp_port: int = 587
-    smtp_username: str = ""
-    smtp_password: str = ""
     smtp_from_email: str = ""
+    mailtrap_api_key: str = ""
+    mailtrap_sender_email: str = "hello@getostrichai.com" # Default sender
 
     # Supabase
     vite_supabase_url: str = ""
@@ -98,5 +95,6 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 settings = Settings()
