@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import SubscriptionPlan, UserSubscription, User, UserUsage, CreditTransaction
-from ..schemas.subscriptions import SubscriptionPlanResponse, UserSubscriptionResponse, CreditUsageRequest, CreditUsageResponse
+from ..schemas.subscriptions import SubscriptionPlanResponse, UserSubscriptionResponse, CreditUsageRequest, CreditUsageResponse, UserUsageResponse
 from ..auth.dependencies import get_current_user
+from typing import List
 
 router = APIRouter()
 
@@ -31,6 +32,8 @@ async def has_had_trial(current_user: User = Depends(get_current_user), db: Sess
         UserSubscription.amount_cents == 0
     ).count()
     return {"has_had_trial": count > 0}
+
+@router.get("/usage", response_model=List[UserUsageResponse])
 async def get_usage_stats(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     # Get current usage for the user
     usage = db.query(UserUsage).filter(UserUsage.user_id == current_user.id).all()

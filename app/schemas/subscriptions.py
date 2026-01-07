@@ -23,6 +23,17 @@ class SubscriptionPlanResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class UserUsageResponse(BaseModel):
+    id: UUID
+    user_id: UUID
+    subscription_id: UUID
+    feature_type: str
+    usage_count: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
 class CreditUsageRequest(BaseModel):
     feature_type: str
     credits_needed: int
