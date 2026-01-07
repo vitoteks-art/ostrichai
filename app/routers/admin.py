@@ -22,8 +22,18 @@ from ..schemas.admin_resources import (
 router = APIRouter()
 
 def get_admin_user(current_user: User = Depends(get_current_user)):
-    # Check is_admin or is_superuser field from User model
-    if not (getattr(current_user, "is_admin", False) or getattr(current_user, "is_superuser", False)):
+    # Check is_admin field from User model (legacy) or roles relationship
+    is_admin = getattr(current_user, "is_admin", False)
+    is_superuser = getattr(current_user, "is_superuser", False)
+    
+    # Check RBAC roles
+    has_role = False
+    if hasattr(current_user, "roles"):
+        role_names = [r.role for r in current_user.roles]
+        if "admin" in role_names or "super_admin" in role_names:
+            has_role = True
+
+    if not (is_admin or is_superuser or has_role):
          raise HTTPException(status_code=403, detail="Not authorized")
     return current_user
 

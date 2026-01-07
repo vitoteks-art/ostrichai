@@ -22,12 +22,14 @@ from .social_media import SocialMediaAccount, SocialMediaPost, ScheduledPost
 from .campaigns import FacebookAdAccount, FacebookCampaign
 from .user_session import UserSession
 from .referral_submissions import ReferralFormSubmission
+from .user_role import UserRole
 
 # Import all models for Alembic
 __all__ = [
+    "Base",
     "User",
-    "Profile",
-    "UserSettings",
+    "UserSession",
+    "UserRole",
     "UserProject",
     "UserNotification",
     "UserActivity",
