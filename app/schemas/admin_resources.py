@@ -9,7 +9,7 @@ class AdminAuditLogCreate(BaseModel):
     resource_type: str
     resource_id: Optional[str] = None
     new_values: Optional[Dict[str, Any]] = None
-    metadata: Optional[Dict[str, Any]] = None
+    audit_metadata: Optional[Dict[str, Any]] = None
 
 class AdminAuditLogResponse(AdminAuditLogCreate):
     id: UUID

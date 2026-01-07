@@ -13,7 +13,7 @@ class AdminAuditLog(Base):
     resource_type = Column(String, nullable=False)
     resource_id = Column(String, nullable=True) # ID of the affected resource (can be UUID or other format)
     status = Column(String, nullable=False, default='success')
-    metadata = Column(JSON, nullable=True)
+    audit_metadata = Column(JSON, nullable=True)
     new_values = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
