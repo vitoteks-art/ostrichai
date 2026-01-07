@@ -5,7 +5,7 @@ from ..database import get_db
 from ..models import User, Profile, UserSettings, UserSession
 from ..schemas.auth import (
     UserCreate, UserResponse, Token, UserLogin, EmailVerificationRequest,
-    LoginRequest, PasswordResetRequest, PasswordResetConfirm,
+    PasswordResetRequest, PasswordResetConfirm,
     VerificationCodeCheck, SessionCreate, SessionResponse
 )
 from ..auth.utils import get_password_hash, verify_password, create_access_token
