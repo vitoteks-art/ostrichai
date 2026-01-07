@@ -32,6 +32,18 @@ class EmailVerificationRequest(BaseModel):
     email: EmailStr
     code: str
 
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+class PasswordResetConfirm(BaseModel):
+    email: EmailStr
+    code: str
+    new_password: str
+
+class VerificationCodeCheck(BaseModel):
+    email: EmailStr
+    code: str
+
 # Session Schemas
 class SessionCreate(BaseModel):
     session_token: str
