@@ -25,19 +25,32 @@ class Settings(BaseSettings):
     @classmethod
     def parse_allowed_origins(cls, v: Union[str, List[str]]) -> List[str]:
         if isinstance(v, list):
-            return v
-        if isinstance(v, str):
-            # Try to parse as JSON first (handles ["a", "b"])
+            raw_list = v
+        elif isinstance(v, str):
+            # Try to parse as JSON first
             try:
                 parsed = json.loads(v)
                 if isinstance(parsed, list):
-                    return parsed
+                    raw_list = parsed
+                else:
+                    raw_list = [v]
             except (json.JSONDecodeError, ValueError):
-                pass
-            
-            # Fallback to comma-separated string (handles "a, b")
-            return [item.strip() for item in v.split(",") if item.strip()]
-        return v
+                # Fallback: strip brackets and split by comma
+                clean_v = v.strip().lstrip('[').rstrip(']')
+                raw_list = [item.strip().strip("'").strip('"') for item in clean_v.split(",") if item.strip()]
+        else:
+            return v
+
+        # Scheme expansion: Ensure both http and https are allowed for any domain provided
+        expanded = set()
+        for origin in raw_list:
+            expanded.add(origin)
+            if origin.startswith("http://"):
+                expanded.add(origin.replace("http://", "https://"))
+            elif origin.startswith("https://"):
+                expanded.add(origin.replace("https://", "http://"))
+        
+        return list(expanded)
 
     # Payment providers
     flutterwave_secret_key: str = ""
