@@ -42,14 +42,15 @@ async def initiate_payment(
             
             # Fallback to metadata for credit purchases
             if not price_id and payment_data.metadata:
-                price_id = payment_data.metadata.get("polarPriceId")
+                # Check multiple possible keys for price ID
+                price_id = (
+                    payment_data.metadata.get("polarPriceId") or 
+                    payment_data.metadata.get("priceId") or
+                    payment_data.metadata.get("product_price_id")
+                )
             
             if not price_id:
-                # If still no price_id, check if it's sent directly in metadata
-                price_id = payment_data.metadata.get("product_price_id") if payment_data.metadata else None
-
-            if not price_id:
-                raise HTTPException(status_code=400, detail="Missing Polar Price ID (product_price_id)")
+                raise HTTPException(status_code=400, detail="Missing Polar Price ID (product_price_id/priceId)")
 
             async with httpx.AsyncClient(follow_redirects=True) as client:
                 headers = {
@@ -68,11 +69,19 @@ async def initiate_payment(
                 }
                 
                 # Polar API expects prices or product_price_id
+                print(f"DEBUG: Initializing Polar checkout with price_id: {price_id}")
                 resp = await client.post("https://api.polar.sh/v1/checkouts", json=payload, headers=headers)
+                
                 if resp.status_code not in [200, 201]:
                     error_msg = resp.text
                     print(f"❌ Polar error ({resp.status_code}): {error_msg}")
-                    raise HTTPException(status_code=resp.status_code, detail=f"Polar API error: {error_msg}")
+                    # If it's a 422 or similar, the body might contain useful JSON
+                    try:
+                        error_json = resp.json()
+                        error_detail = error_json.get("detail") or error_msg
+                    except:
+                        error_detail = error_msg
+                    raise HTTPException(status_code=resp.status_code, detail=f"Polar API error: {error_detail}")
                 
                 polar_data = resp.json()
                 payment_url = polar_data.get("url")

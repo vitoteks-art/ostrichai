@@ -23,7 +23,14 @@ async def get_my_subscription(current_user: User = Depends(get_current_user), db
 
     return subscription
 
-@router.get("/usage")
+@router.get("/has-trial")
+async def has_had_trial(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Check if user has or ever had a free subscription
+    count = db.query(UserSubscription).filter(
+        UserSubscription.user_id == current_user.id,
+        UserSubscription.amount_cents == 0
+    ).count()
+    return {"has_had_trial": count > 0}
 async def get_usage_stats(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     # Get current usage for the user
     usage = db.query(UserUsage).filter(UserUsage.user_id == current_user.id).all()

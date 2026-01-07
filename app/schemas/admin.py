@@ -31,3 +31,36 @@ class AdminStats(BaseModel):
     total_users: int
     total_revenue_cents: int
     active_subscriptions: int
+
+class UserProfileUpdate(BaseModel):
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    location: Optional[str] = None
+    bio: Optional[str] = None
+
+class UserStatusUpdate(BaseModel):
+    is_active: bool
+
+class SubscriptionAdminView(BaseModel):
+    id: UUID
+    user_id: UUID
+    plan_id: UUID
+    status: str
+    amount_cents: int
+    currency: str
+    customer_name: Optional[str] = None
+    provider_customer_id: Optional[str] = None
+    created_at: datetime
+    plan: Optional[Dict[str, Any]] = None
+
+    class Config:
+        from_attributes = True
+
+class SubscriptionAssignRequest(BaseModel):
+    user_id: UUID
+    plan_id: UUID
+    reason: Optional[str] = None
+
+class SubscriptionExtendRequest(BaseModel):
+    days: int
+    reason: Optional[str] = None

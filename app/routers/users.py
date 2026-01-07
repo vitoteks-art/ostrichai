@@ -1,10 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
+import httpx
+import base64
 from ..database import get_db
 from ..models import Profile, UserSettings, UserProject, UserNotification, UserActivity
 from ..schemas.users import ProfileUpdate, ProfileResponse, UserSettingsUpdate, UserSettingsResponse, UserActivityCreate, UserActivityResponse
 from ..auth.dependencies import get_current_user
 from ..models import User
+from ..config import settings
 
 router = APIRouter()
 
@@ -32,6 +35,54 @@ async def update_profile(
     db.commit()
     db.refresh(profile)
     return profile
+
+@router.post("/profile/avatar")
+async def upload_avatar(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    try:
+        # Read file content
+        contents = await file.read()
+        # Convert to base64 for ImgBB
+        base64_image = base64.b64encode(contents).decode('utf-8')
+        
+        # Upload to ImgBB
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                "https://api.imgbb.com/1/upload",
+                data={
+                    "key": settings.vite_imgbb_api_key,
+                    "image": base64_image,
+                    "name": f"avatar_{current_user.id}"
+                }
+            )
+            
+            if resp.status_code != 200:
+                print(f"❌ ImgBB error: {resp.text}")
+                raise HTTPException(status_code=resp.status_code, detail="Failed to upload image to storage")
+            
+            img_data = resp.json()
+            avatar_url = img_data.get("data", {}).get("url")
+            
+            if not avatar_url:
+                raise HTTPException(status_code=500, detail="ImgBB did not return a URL")
+
+            # Update profile in DB
+            profile = db.query(Profile).filter(Profile.id == current_user.id).first()
+            if not profile:
+                profile = Profile(id=current_user.id, email=current_user.email)
+                db.add(profile)
+            
+            profile.avatar_url = avatar_url
+            db.commit()
+            
+            return {"avatar_url": avatar_url}
+            
+    except Exception as e:
+        print(f"❌ Avatar upload failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/settings", response_model=UserSettingsResponse)
 async def get_settings(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

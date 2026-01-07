@@ -2,8 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from ..database import get_db
-from ..models import User, Profile, UserSettings
-from ..schemas.auth import UserCreate, UserResponse, Token, UserLogin, EmailVerificationRequest
+from ..models import User, Profile, UserSettings, UserSession
+from ..schemas.auth import (
+    UserCreate, UserResponse, Token, UserLogin, EmailVerificationRequest,
+    LoginRequest, PasswordResetRequest, PasswordResetConfirm,
+    VerificationCodeCheck, SessionCreate, SessionResponse
+)
 from ..auth.utils import get_password_hash, verify_password, create_access_token
 from ..auth.dependencies import get_current_user
 from ..utils.email import send_verification_email
@@ -84,6 +88,67 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
 
     access_token = create_access_token(data={"sub": str(user.id)})
     return {"access_token": access_token, "token_type": "bearer"}
+
+@router.post("/sessions/login", response_model=SessionResponse)
+async def record_login_session(
+    session_data: SessionCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Record a new user login session
+    """
+    user_session = UserSession(
+        user_id=current_user.id,
+        session_token=session_data.session_token,
+        is_active=True,
+        login_at=datetime.now(timezone.utc)
+    )
+    db.add(user_session)
+    db.commit()
+    db.refresh(user_session)
+    return user_session
+
+@router.post("/sessions/logout")
+async def logout_session(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Mark all active sessions for the current user as inactive
+    """
+    db.query(UserSession).filter(
+        UserSession.user_id == current_user.id,
+        UserSession.is_active == True
+    ).update({
+        UserSession.is_active: False,
+        UserSession.logout_at: datetime.now(timezone.utc)
+    })
+    
+    db.commit()
+    return {"message": "Logged out successfully"}
+
+@router.post("/sessions/cleanup")
+async def cleanup_sessions(
+    db: Session = Depends(get_db)
+):
+    """
+    Cleanup old inactive sessions (can be called by cron job or periodically)
+    """
+    twenty_four_hours_ago = datetime.now(timezone.utc) - timedelta(hours=24)
+    
+    # Logic: Mark sessions created > 24h ago as inactive if they are still active
+    # This is a bit simplistic policy, maybe we want 'updated_at' but for now it matches frontend logic
+    updated_count = db.query(UserSession).filter(
+        UserSession.is_active == True,
+        UserSession.created_at < twenty_four_hours_ago
+    ).update({
+        UserSession.is_active: False,
+        UserSession.logout_at: datetime.now(timezone.utc)
+    })
+    
+    db.commit()
+    return {"message": f"Cleaned up {updated_count} expired sessions"}
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
