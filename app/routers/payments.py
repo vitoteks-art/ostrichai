@@ -28,29 +28,41 @@ async def initiate_payment(
             # Polar expects a checkout session creation
             # If subscription_plan_id is provided, get the price ID from the DB
             price_id = None
+            print(f"🔍 Polar Init - Subscription Plan ID: {payment_data.subscription_plan_id}", file=sys.stderr, flush=True)
+            
             if payment_data.subscription_plan_id:
                 try:
                     plan_uuid = uuid.UUID(payment_data.subscription_plan_id)
                     plan = db.query(SubscriptionPlan).filter(SubscriptionPlan.id == plan_uuid).first()
                     if plan:
                         price_id = plan.polar_product_price_id
-                except ValueError:
+                        print(f"✅ Found plan: {plan.name}, Price ID: {price_id}", file=sys.stderr, flush=True)
+                    else:
+                        print(f"❌ No plan found for UUID: {plan_uuid}", file=sys.stderr, flush=True)
+                except ValueError as e:
+                    print(f"⚠️ Invalid UUID format: {payment_data.subscription_plan_id}, trying string match: {e}", file=sys.stderr, flush=True)
                     # Not a valid UUID, maybe it's a string ID
                     plan = db.query(SubscriptionPlan).filter(SubscriptionPlan.id == payment_data.subscription_plan_id).first()
                     if plan:
                         price_id = plan.polar_product_price_id
+                        print(f"✅ Found plan by string: {plan.name}, Price ID: {price_id}", file=sys.stderr, flush=True)
             
             # Fallback to metadata for credit purchases
             if not price_id and payment_data.metadata:
+                print(f"🔍 Checking metadata for price_id: {payment_data.metadata}", file=sys.stderr, flush=True)
                 # Check multiple possible keys for price ID
                 price_id = (
                     payment_data.metadata.get("polarPriceId") or 
                     payment_data.metadata.get("priceId") or
                     payment_data.metadata.get("product_price_id")
                 )
+                if price_id:
+                    print(f"✅ Found price_id in metadata: {price_id}", file=sys.stderr, flush=True)
             
             if not price_id:
-                raise HTTPException(status_code=400, detail="Missing Polar Price ID (product_price_id/priceId)")
+                error_msg = f"Missing Polar Price ID. Plan ID: {payment_data.subscription_plan_id}, Metadata: {payment_data.metadata}"
+                print(f"❌ {error_msg}", file=sys.stderr, flush=True)
+                raise HTTPException(status_code=400, detail=error_msg)
 
             async with httpx.AsyncClient(follow_redirects=True) as client:
                 headers = {
@@ -69,23 +81,33 @@ async def initiate_payment(
                 }
                 
                 # Polar API expects prices or product_price_id
-                print(f"DEBUG: Initializing Polar checkout with price_id: {price_id}")
-                resp = await client.post("https://api.polar.sh/v1/checkouts", json=payload, headers=headers)
+                print(f"🚀 Polar Checkout Payload:", file=sys.stderr, flush=True)
+                print(f"   Price ID: {price_id}", file=sys.stderr, flush=True)
+                print(f"   Email: {payment_data.email}", file=sys.stderr, flush=True)
+                print(f"   Success URL: {payload['success_url']}", file=sys.stderr, flush=True)
+                
+                resp = await client.post("https://api.polar.sh/v1/checkouts/", json=payload, headers=headers)
                 
                 if resp.status_code not in [200, 201]:
                     error_msg = resp.text
-                    print(f"❌ Polar error ({resp.status_code}): {error_msg}")
+                    print(f"❌ Polar API Error ({resp.status_code}): {error_msg}", file=sys.stderr, flush=True)
                     # If it's a 422 or similar, the body might contain useful JSON
                     try:
                         error_json = resp.json()
-                        error_detail = error_json.get("detail") or error_msg
-                    except:
+                        error_detail = error_json.get("detail", error_msg)
+                        if isinstance(error_detail, list):
+                            # Validation error format
+                            error_detail = "; ".join([f"{err.get('loc', [])} - {err.get('msg', '')}" for err in error_detail])
+                        print(f"📋 Parsed Error Detail: {error_detail}", file=sys.stderr, flush=True)
+                    except Exception as parse_err:
+                        print(f"⚠️ Could not parse error JSON: {parse_err}", file=sys.stderr, flush=True)
                         error_detail = error_msg
                     raise HTTPException(status_code=resp.status_code, detail=f"Polar API error: {error_detail}")
                 
                 polar_data = resp.json()
                 payment_url = polar_data.get("url")
                 reference = polar_data.get("id") # Use checkout ID as reference
+                print(f"✅ Polar Checkout Created! URL: {payment_url}, Ref: {reference}", file=sys.stderr, flush=True)
 
         elif payment_data.provider == "paystack":
             async with httpx.AsyncClient(follow_redirects=True) as client:
