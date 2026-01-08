@@ -22,3 +22,9 @@ class User(Base):
 
     # Relationships
     roles = relationship("UserRole", foreign_keys="[UserRole.user_id]", back_populates="user", cascade="all, delete-orphan")
+
+    @property
+    def is_superuser(self) -> bool:
+        if not hasattr(self, "roles") or self.roles is None:
+            return False
+        return any(r.role == "super_admin" for r in self.roles)

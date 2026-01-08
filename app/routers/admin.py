@@ -19,6 +19,31 @@ from ..schemas.admin_resources import (
 
 router = APIRouter()
 
+def _user_to_admin_view(user: User) -> Dict[str, Any]:
+    """Helper to convert a User model to UserAdminView dict with enriched roles."""
+    user_role = "user"
+    is_super = False
+    if hasattr(user, "roles") and user.roles:
+        role_names = [r.role for r in user.roles]
+        if "super_admin" in role_names:
+            user_role = "super_admin"
+            is_super = True
+        elif "admin" in role_names:
+            user_role = "admin"
+    elif user.is_admin:
+        user_role = "admin"
+        
+    return {
+        "id": user.id,
+        "email": user.email,
+        "full_name": user.full_name,
+        "is_active": user.is_active,
+        "is_admin": user.is_admin,
+        "is_superuser": is_super,
+        "created_at": user.created_at,
+        "role": user_role
+    }
+
 
 @router.get("/subscriptions", response_model=List[SubscriptionAdminView])
 async def list_subscriptions(
@@ -140,7 +165,7 @@ async def update_user_profile(
     
     db.commit()
     db.refresh(user)
-    return user
+    return _user_to_admin_view(user)
 
 @router.post("/users/{user_id}/status", response_model=UserAdminView)
 async def toggle_user_status(
@@ -156,7 +181,7 @@ async def toggle_user_status(
     user.is_active = status_update.is_active
     db.commit()
     db.refresh(user)
-    return user
+    return _user_to_admin_view(user)
 
 @router.delete("/users/{user_id}")
 async def delete_user(
@@ -182,22 +207,7 @@ async def list_users(
     db: Session = Depends(get_db)
 ):
     users = db.query(User).offset(skip).limit(limit).all()
-    
-    # Enrich users with their highest role for the view
-    for user in users:
-        user_role = "user"
-        if hasattr(user, "roles") and user.roles:
-            role_names = [r.role for r in user.roles]
-            if "super_admin" in role_names:
-                user_role = "super_admin"
-            elif "admin" in role_names:
-                user_role = "admin"
-        elif user.is_admin:
-            user_role = "admin"
-        
-        user.role = user_role
-        
-    return users
+    return [_user_to_admin_view(u) for u in users]
 
 @router.get("/transactions", response_model=List[TransactionAdminView])
 async def list_transactions(

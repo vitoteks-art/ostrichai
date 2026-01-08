@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import User, ReferralLink, ReferralConversion, ReferralCampaign, UserPoints, ReferralClick, RewardRedemption, ReferralFormSubmission
 from ..schemas.referrals import ReferralStatsResponse, ReferralLinkResponse, ReferralCampaignResponse, UserPointsResponse, PublicLandingResponse, ReferralClickCreate, ReferralConversionCreate, RewardRedeemRequest, RewardRedeemResponse, ReferralFormSubmissionCreate, ReferralCampaignCreate, ReferralCampaignUpdate
-from ..auth.dependencies import get_current_user, get_current_admin_user as get_admin_user
+from ..auth.dependencies import get_current_user, get_current_admin_user
 from typing import List, Optional, Dict, Any
 from uuid import UUID
 
@@ -279,7 +279,7 @@ async def redeem_reward(
 
 @router.post("/process-conversions")
 async def process_conversions(
-    admin: User = Depends(get_admin_user),
+    admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     # Find all pending conversions
@@ -391,7 +391,7 @@ async def update_submission_status(
 
 @router.post("/cleanup-submissions")
 async def cleanup_submissions(
-    admin: User = Depends(get_admin_user),
+    admin: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     # Basic cleanup: delete old submissions (e.g., older than 2 years as a placeholder)

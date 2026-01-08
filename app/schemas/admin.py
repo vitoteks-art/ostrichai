@@ -9,7 +9,7 @@ class UserAdminView(BaseModel):
     full_name: Optional[str] = None
     is_active: bool
     is_admin: bool
-    is_superuser: bool
+    is_superuser: bool = False
     created_at: datetime
     role: str = "user"
     # Add other relevant fields for admin view
