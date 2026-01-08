@@ -1,11 +1,13 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
+import httpx
+import sys
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from uuid import UUID
 from datetime import datetime
 
 from ..database import get_db
-from ..models import FacebookAdAccount, FacebookCampaign, User
+from ..models import FacebookAdAccount, FacebookCampaign, SocialMediaAccount, User
 from ..schemas.campaigns import (
     FacebookAdAccountCreate, FacebookAdAccountResponse,
     FacebookCampaignCreate, FacebookCampaignUpdate, FacebookCampaignResponse
@@ -88,3 +90,53 @@ async def update_campaign_status(
     db.commit()
     db.refresh(db_campaign)
     return db_campaign
+
+@router.post("/sync")
+async def sync_campaign_analytics(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Synchronizes analytics for active Facebook campaigns.
+    """
+    # Fetch active campaigns
+    campaigns = db.query(FacebookCampaign).filter(
+        FacebookCampaign.user_id == current_user.id,
+        FacebookCampaign.status == 'active'
+    ).all()
+
+    if not campaigns:
+        return {"status": "success", "updated_count": 0, "message": "No active campaigns to sync"}
+
+    updated_count = 0
+    async with httpx.AsyncClient() as client:
+        for campaign in campaigns:
+            ad_account = db.query(FacebookAdAccount).filter(FacebookAdAccount.id == campaign.ad_account_id).first()
+            if not ad_account:
+                continue
+            
+            social_account = db.query(SocialMediaAccount).filter(SocialMediaAccount.id == ad_account.social_account_id).first()
+            if not social_account:
+                continue
+                
+            try:
+                # GET graph.facebook.com/v18.0/{campaign_id}/insights?fields=impressions,clicks,spend&access_token={token}
+                url = f"https://graph.facebook.com/v18.0/{campaign.campaign_id}/insights"
+                params = {
+                    "fields": "impressions,clicks,spend",
+                    "access_token": social_account.access_token
+                }
+                response = await client.get(url, params=params)
+                data = response.json()
+                
+                if "data" in data and len(data["data"]) > 0:
+                    insights = data["data"][0]
+                    campaign.impressions = int(insights.get("impressions", 0))
+                    campaign.clicks = int(insights.get("clicks", 0))
+                    campaign.spend = float(insights.get("spend", 0.0))
+                    updated_count += 1
+            except Exception as e:
+                print(f"Error syncing campaign {campaign.campaign_id}: {str(e)}", file=sys.stderr)
+
+    db.commit()
+    return {"status": "success", "updated_count": updated_count}

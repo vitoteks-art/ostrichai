@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine
 from app.models import Base
-from app.routers import auth, users, subscriptions, payments, referrals, admin, projects, social_media, campaigns
+from app.routers import auth, users, subscriptions, payments, referrals, admin, projects, social_media, campaigns, social_analytics
 
 from contextlib import asynccontextmanager
 
@@ -52,6 +52,7 @@ app.include_router(referrals.router, prefix="/api/referrals", tags=["Referrals"]
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
 app.include_router(projects.router, prefix="/api/projects", tags=["Projects"])
 app.include_router(social_media.router, prefix="/api/social", tags=["Social Media"])
+app.include_router(social_analytics.router, prefix="/api", tags=["Social Analytics"])
 app.include_router(campaigns.router, prefix="/api/campaigns", tags=["Ad Campaigns"])
 
 @app.get("/")
