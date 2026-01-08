@@ -109,6 +109,10 @@ async def record_login_session(
         login_at=datetime.now(timezone.utc)
     )
     db.add(user_session)
+    
+    # Update user last_sign_in_at
+    current_user.last_sign_in_at = datetime.now(timezone.utc)
+    
     db.commit()
     db.refresh(user_session)
     return user_session
