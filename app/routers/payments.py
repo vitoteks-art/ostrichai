@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
+import sys
 from ..database import get_db
 from ..auth.dependencies import get_current_user
 from ..models import User, PaymentTransaction, SubscriptionPlan
