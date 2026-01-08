@@ -11,6 +11,7 @@ class UserAdminView(BaseModel):
     is_admin: bool
     is_superuser: bool = False
     created_at: datetime
+    last_sign_in_at: Optional[datetime] = None
     role: str = "user"
     # Add other relevant fields for admin view
 

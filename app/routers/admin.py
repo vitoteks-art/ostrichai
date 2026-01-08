@@ -41,6 +41,7 @@ def _user_to_admin_view(user: User) -> Dict[str, Any]:
         "is_admin": user.is_admin,
         "is_superuser": is_super,
         "created_at": user.created_at,
+        "last_sign_in_at": user.last_sign_in_at,
         "role": user_role
     }
 

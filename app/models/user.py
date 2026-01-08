@@ -19,6 +19,7 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    last_sign_in_at = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships
     roles = relationship("UserRole", foreign_keys="[UserRole.user_id]", back_populates="user", cascade="all, delete-orphan")

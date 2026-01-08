@@ -86,6 +86,10 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
             detail="Email not verified. Please verify your email to log in."
         )
 
+    # Update last sign in time
+    user.last_sign_in_at = datetime.now(timezone.utc)
+    db.commit()
+
     access_token = create_access_token(data={"sub": str(user.id)})
     return {"access_token": access_token, "token_type": "bearer"}
 
