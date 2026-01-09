@@ -30,6 +30,8 @@ class SocialMediaAccountUpdate(BaseModel):
 class SocialMediaAccountResponse(SocialMediaAccountBase):
     id: UUID
     user_id: UUID
+    access_token: str
+    token_expires_at: Optional[datetime] = None
     account_status: str
     posts_count: int
     last_posted_at: Optional[datetime] = None
