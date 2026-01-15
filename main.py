@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine
 from app.models import Base
-from app.routers import auth, users, subscriptions, payments, referrals, admin, projects, social_media, campaigns, social_analytics
+from app.routers import auth, users, subscriptions, payments, referrals, admin, projects, social_media, campaigns, social_analytics, bookings, emails
 
 from contextlib import asynccontextmanager
 
@@ -17,6 +17,8 @@ from app.config import settings
 # Debug: Print settings on startup
 print("--- BACKEND STARTUP ---", flush=True)
 print(f"ALLOWED_ORIGINS (raw): {settings.allowed_origins}", flush=True)
+print(f"GOOGLE_CLIENT_ID: {settings.google_client_id[:5]}...{settings.google_client_id[-5:] if settings.google_client_id else 'EMPTY'}", flush=True)
+print(f"VITE_GOOGLE_REDIRECT_URL: {settings.vite_google_redirect_url}", flush=True)
 
 app = FastAPI(
     title="OstrichAI API",
@@ -54,6 +56,8 @@ app.include_router(projects.router, prefix="/api/projects", tags=["Projects"])
 app.include_router(social_media.router, prefix="/api/social", tags=["Social Media"])
 app.include_router(social_analytics.router, prefix="/api", tags=["Social Analytics"])
 app.include_router(campaigns.router, prefix="/api/campaigns", tags=["Ad Campaigns"])
+app.include_router(bookings.router, prefix="/api/bookings", tags=["Bookings"])
+app.include_router(emails.router, prefix="/api/emails", tags=["Emails"])
 
 @app.get("/")
 async def root():

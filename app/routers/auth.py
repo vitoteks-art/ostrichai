@@ -6,16 +6,114 @@ from ..models import User, Profile, UserSettings, UserSession
 from ..schemas.auth import (
     UserCreate, UserResponse, Token, UserLogin, EmailVerificationRequest,
     PasswordResetRequest, PasswordResetConfirm,
-    VerificationCodeCheck, SessionCreate, SessionResponse
+    VerificationCodeCheck, SessionCreate, SessionResponse,
+    GoogleAuthRequest
 )
-from ..auth.utils import get_password_hash, verify_password, create_access_token
+from ..auth.utils import (
+    get_password_hash, verify_password, create_access_token,
+    exchange_google_code, get_google_user_info
+)
 from ..auth.dependencies import get_current_user
-from ..utils.email import send_verification_email
+from ..utils.email import send_verification_email, send_password_reset_email
+from ..config import settings
 import random
 import string
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlencode
 
 router = APIRouter()
+
+@router.get("/google/url")
+async def get_google_auth_url():
+    """
+    Generate Google authorization URL
+    """
+    params = {
+        "client_id": settings.google_client_id,
+        "redirect_uri": settings.vite_google_redirect_url,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "access_type": "offline",
+        "prompt": "consent"
+    }
+    url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
+    print(f"DEBUG: Generated Google Auth URL: {url}", flush=True)
+    return {"url": url}
+
+@router.post("/google/callback", response_model=Token)
+async def google_callback(request: GoogleAuthRequest, db: Session = Depends(get_db)):
+    """
+    Handle Google OAuth callback
+    """
+    print(f"DEBUG: Google Callback Hit", flush=True)
+    print(f"DEBUG: Config ID: {settings.google_client_id}", flush=True)
+    print(f"DEBUG: Config Secret: {settings.google_client_secret[:4]}...", flush=True)
+    print(f"DEBUG: Redirect URI from Frontend: {request.redirect_uri}", flush=True)
+    
+    # 1. Exchange code for token
+    token_data = await exchange_google_code(request.code, request.redirect_uri)
+    if not token_data:
+         raise HTTPException(status_code=400, detail="Failed to exchange code for token (No response)")
+    
+    if "error" in token_data:
+        error_msg = token_data.get("error_description", token_data.get("error", "Unknown Google Error"))
+        print(f"Google Error Detail: {error_msg}")
+        raise HTTPException(status_code=400, detail=f"Google Error: {error_msg}")
+    
+    access_token = token_data.get("access_token")
+    
+    # 2. Get user info
+    google_user = await get_google_user_info(access_token)
+    if not google_user:
+        raise HTTPException(status_code=400, detail="Failed to get user info from Google")
+    
+    email = google_user.get("email")
+    full_name = google_user.get("name")
+    
+    # 3. Check if user exists
+    user = db.query(User).filter(User.email == email).first()
+    
+    if not user:
+        # Create new user
+        # We need a dummy password since it's NOT NULL in our model for now
+        dummy_password = "".join(random.choices(string.ascii_letters + string.digits, k=32))
+        hashed_password = get_password_hash(dummy_password)
+        
+        user = User(
+            email=email,
+            full_name=full_name,
+            hashed_password=hashed_password,
+            is_verified=True, # Google emails are verified
+            is_active=True
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        
+        # Create profile
+        db_profile = Profile(
+            id=user.id,
+            email=user.email,
+            full_name=user.full_name,
+            avatar_url=google_user.get("picture")
+        )
+        db.add(db_profile)
+        
+        # Create user settings
+        db_settings = UserSettings(id=user.id)
+        db.add(db_settings)
+        db.commit()
+    else:
+        # Update existing user if needed
+        if not user.full_name:
+            user.full_name = full_name
+        user.is_verified = True # Ensure verified if coming from Google
+        user.last_sign_in_at = datetime.now(timezone.utc)
+        db.commit()
+
+    # 4. Generate local JWT
+    local_access_token = create_access_token(data={"sub": str(user.id)})
+    return {"access_token": local_access_token, "token_type": "bearer"}
 
 @router.post("/register", response_model=UserResponse)
 async def register(user_data: UserCreate, db: Session = Depends(get_db)):
@@ -214,3 +312,53 @@ async def resend_verification(email: str = Query(...), db: Session = Depends(get
     await send_verification_email(user.email, verification_code)
     
     return {"message": "Verification code resent"}
+
+@router.post("/password-reset/request")
+async def request_password_reset(request: PasswordResetRequest, db: Session = Depends(get_db)):
+    """
+    Send a password reset code to the user's email.
+    """
+    user = db.query(User).filter(User.email == request.email).first()
+
+    # Always return success to avoid leaking which emails are registered
+    if not user:
+        return {"message": "If that email exists, a reset code has been sent."}
+
+    reset_code = ''.join(random.choices(string.digits, k=6))
+    user.password_reset_code = reset_code
+    user.password_reset_expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+    db.commit()
+
+    reset_url = None
+    if settings.vite_app_url:
+        reset_url = f"{settings.vite_app_url.rstrip('/')}/reset-password?email={request.email}&code={reset_code}"
+
+    await send_password_reset_email(request.email, reset_code, reset_url)
+
+    return {"message": "If that email exists, a reset code has been sent."}
+
+@router.post("/password-reset/confirm")
+async def confirm_password_reset(request: PasswordResetConfirm, db: Session = Depends(get_db)):
+    """
+    Confirm a password reset using the code sent to the user's email.
+    """
+    user = db.query(User).filter(User.email == request.email).first()
+
+    if not user or not user.password_reset_code:
+        raise HTTPException(status_code=400, detail="Invalid reset code")
+
+    if user.password_reset_code != request.code:
+        raise HTTPException(status_code=400, detail="Invalid reset code")
+
+    if user.password_reset_expires_at and user.password_reset_expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Reset code has expired")
+
+    if len(request.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters long")
+
+    user.hashed_password = get_password_hash(request.new_password)
+    user.password_reset_code = None
+    user.password_reset_expires_at = None
+    db.commit()
+
+    return {"message": "Password reset successfully"}

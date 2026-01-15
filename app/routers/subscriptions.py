@@ -5,6 +5,7 @@ from ..models import SubscriptionPlan, UserSubscription, User, UserUsage, Credit
 from ..schemas.subscriptions import SubscriptionPlanResponse, UserSubscriptionResponse, CreditUsageRequest, CreditUsageResponse, UserUsageResponse
 from ..auth.dependencies import get_current_user
 from typing import List
+from uuid import UUID
 
 router = APIRouter()
 
@@ -57,11 +58,17 @@ async def get_credit_balance(current_user: User = Depends(get_current_user), db:
 
 @router.post("/track-usage")
 async def track_usage(
-    feature_type: str,
-    amount: int = 1,
+    request_data: dict,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    feature_type = request_data.get("feature_type")
+    amount = request_data.get("amount", 1)
+    metadata = request_data.get("metadata", {})
+
+    if not feature_type:
+        raise HTTPException(status_code=400, detail="feature_type is required")
+
     # Get user's subscription
     subscription = db.query(UserSubscription).filter(
         UserSubscription.user_id == current_user.id,
@@ -69,14 +76,20 @@ async def track_usage(
     ).first()
 
     if not subscription:
-        raise HTTPException(status_code=400, detail="No active subscription found")
+        # We might want to allow tracking usage even without active sub if it's free feature
+        # but the model requires subscription_id? Let's check the schema.
+        # Actually in models/user_usage.py subscription_id is nullable. So it's fine.
+        subscription_id = None
+    else:
+        subscription_id = subscription.id
 
     # Create usage record
     usage = UserUsage(
         user_id=current_user.id,
-        subscription_id=subscription.id,
+        subscription_id=subscription_id,
         feature_type=feature_type,
-        usage_count=amount
+        usage_count=amount,
+        usage_metadata=metadata
     )
     db.add(usage)
     db.commit()
@@ -160,3 +173,89 @@ async def use_credits(
             remaining_balance=subscription.credit_balance,
             detail=f"Error processing credit usage: {str(e)}"
         )
+
+@router.post("")
+async def create_subscription(
+    request_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    plan_id = request_data.get("plan_id")
+    payment_provider = request_data.get("payment_provider")
+    payment_data = request_data.get("payment_data")
+    
+    plan = db.query(SubscriptionPlan).filter(SubscriptionPlan.id == plan_id).first()
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+        
+    subscription = UserSubscription(
+        user_id=current_user.id,
+        plan_id=plan_id,
+        payment_provider=payment_provider,
+        status='pending_approval' if payment_provider != 'admin' else 'active',
+        amount_cents=plan.price_cents,
+        currency=plan.currency or 'USD',
+        monthly_credits=plan.limits.get("monthlyCredits", 0) if plan.limits else 0,
+        credit_balance=plan.limits.get("monthlyCredits", 0) if plan.limits else 0,
+        customer_name=current_user.full_name
+    )
+    db.add(subscription)
+    db.commit()
+    db.refresh(subscription)
+    return subscription
+
+@router.post("/{subscription_id}/cancel")
+async def cancel_subscription(
+    subscription_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    subscription = db.query(UserSubscription).filter(
+        UserSubscription.id == subscription_id,
+        UserSubscription.user_id == current_user.id
+    ).first()
+    if not subscription:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+        
+    subscription.status = 'canceled'
+    db.commit()
+    return {"status": "success"}
+
+@router.post("/{subscription_id}/approve")
+async def approve_subscription(
+    subscription_id: UUID,
+    db: Session = Depends(get_db)
+):
+    subscription = db.query(UserSubscription).filter(UserSubscription.id == subscription_id).first()
+    if not subscription:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+        
+    subscription.status = 'active'
+    db.commit()
+    return {"status": "success"}
+
+@router.post("/{subscription_id}/reject")
+async def reject_subscription(
+    subscription_id: UUID,
+    db: Session = Depends(get_db)
+):
+    subscription = db.query(UserSubscription).filter(UserSubscription.id == subscription_id).first()
+    if not subscription:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+        
+    subscription.status = 'rejected'
+    db.commit()
+    return {"status": "success"}
+
+@router.post("/{subscription_id}/set-pending")
+async def set_subscription_pending(
+    subscription_id: UUID,
+    db: Session = Depends(get_db)
+):
+    subscription = db.query(UserSubscription).filter(UserSubscription.id == subscription_id).first()
+    if not subscription:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+        
+    subscription.status = 'pending_approval'
+    db.commit()
+    return {"status": "success"}

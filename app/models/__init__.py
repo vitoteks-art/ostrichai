@@ -23,6 +23,8 @@ from .campaigns import FacebookAdAccount, FacebookCampaign
 from .user_session import UserSession
 from .referral_submissions import ReferralFormSubmission
 from .user_role import UserRole
+from .booking import MeetingType, Appointment, AvailabilitySetting, BookingSetting
+from .email import EmailTemplate, EmailCampaign, EmailSend, EmailLog
 
 # Import all models for Alembic
 __all__ = [
@@ -52,5 +54,13 @@ __all__ = [
     "FacebookAdAccount",
     "FacebookCampaign",
     "UserSession",
-    "ReferralFormSubmission"
+    "ReferralFormSubmission",
+    "MeetingType",
+    "Appointment",
+    "AvailabilitySetting",
+    "BookingSetting",
+    "EmailTemplate",
+    "EmailCampaign",
+    "EmailSend",
+    "EmailLog"
 ]

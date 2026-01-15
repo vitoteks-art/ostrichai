@@ -99,3 +99,16 @@ class SocialMediaPublishRequest(BaseModel):
     account_id: UUID
     content: dict # Structure: text, imageUrls, videoUrl, hashtags, etc.
     project_id: Optional[UUID] = None
+
+class OAuthExchangeRequest(BaseModel):
+    platform: str
+    code: str
+    redirect_uri: Optional[str] = None
+
+class OAuthExchangeResponse(BaseModel):
+    access_token: str
+    refresh_token: Optional[str] = None
+    expires_in: Optional[int] = None
+    token_type: Optional[str] = None
+    user_info: Optional[dict] = None
+    accounts: Optional[List[dict]] = None

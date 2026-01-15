@@ -24,6 +24,10 @@ class UserResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class GoogleAuthRequest(BaseModel):
+    code: str
+    redirect_uri: str
+
 class Token(BaseModel):
     access_token: str
     token_type: str

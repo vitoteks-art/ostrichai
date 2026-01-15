@@ -9,11 +9,141 @@ from ..models import SocialMediaAccount, SocialMediaPost, ScheduledPost, User
 from ..schemas.social_media import (
     SocialMediaAccountCreate, SocialMediaAccountUpdate, SocialMediaAccountResponse,
     SocialMediaPostCreate, SocialMediaPostResponse,
-    ScheduledPostCreate, ScheduledPostResponse
+    ScheduledPostCreate, ScheduledPostResponse,
+    OAuthExchangeRequest, OAuthExchangeResponse
 )
 from ..auth.dependencies import get_current_user
+from ..config import settings
+import httpx
+import base64
 
 router = APIRouter(tags=["Social Media"])
+
+@router.post("/oauth/exchange", response_model=OAuthExchangeResponse)
+async def exchange_oauth_code(
+    request: OAuthExchangeRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    platform = request.platform.lower()
+    code = request.code
+    redirect_uri = request.redirect_uri
+
+    async with httpx.AsyncClient() as client:
+        if platform in ['facebook', 'instagram']:
+            app_id = settings.facebook_app_id or settings.vite_facebook_app_id
+            app_secret = settings.facebook_app_secret
+            
+            resp = await client.get(
+                "https://graph.facebook.com/v18.0/oauth/access_token",
+                params={
+                    "client_id": app_id,
+                    "client_secret": app_secret,
+                    "redirect_uri": redirect_uri,
+                    "code": code
+                }
+            )
+            data = resp.json()
+            if resp.status_code != 200 or "error" in data:
+                raise HTTPException(status_code=400, detail=data.get("error", {}).get("message", "OAuth failed"))
+            
+            access_token = data["access_token"]
+            
+            # Fetch user info
+            user_info_resp = await client.get(
+                f"https://graph.facebook.com/v18.0/me?fields=id,name,picture&access_token={access_token}"
+            )
+            user_info_raw = user_info_resp.json()
+            user_info = {
+                "id": user_info_raw.get("id"),
+                "name": user_info_raw.get("name"),
+                "profile_picture": user_info_raw.get("picture", {}).get("data", {}).get("url")
+            }
+            
+            # Fetch pages (only for Facebook)
+            accounts = []
+            if platform == 'facebook':
+                pages_resp = await client.get(
+                    f"https://graph.facebook.com/v18.0/me/accounts?fields=id,name,access_token,category,picture&access_token={access_token}"
+                )
+                pages_data = pages_resp.json()
+                if "data" in pages_data:
+                    for page in pages_data["data"]:
+                        accounts.append({
+                            "id": page["id"],
+                            "name": page["name"],
+                            "type": "page",
+                            "platform_user_id": page["id"],
+                            "access_token": page.get("access_token")
+                        })
+            
+            return OAuthExchangeResponse(
+                access_token=access_token,
+                expires_in=data.get("expires_in"),
+                user_info=user_info,
+                accounts=accounts
+            )
+
+        elif platform == 'twitter':
+            auth_header = base64.b64encode(f"{settings.twitter_client_id}:{settings.twitter_client_secret}".encode()).decode()
+            resp = await client.post(
+                "https://api.twitter.com/2/oauth2/token",
+                headers={
+                    "Authorization": f"Basic {auth_header}",
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                data={
+                    "code": code,
+                    "grant_type": "authorization_code",
+                    "redirect_uri": redirect_uri,
+                    "code_verifier": "challenge" 
+                }
+            )
+            data = resp.json()
+            if resp.status_code != 200:
+                raise HTTPException(status_code=400, detail=data.get("error_description", "OAuth failed"))
+                
+            # Get user info
+            me_resp = await client.get(
+                "https://api.twitter.com/2/users/me?user.fields=profile_image_url",
+                headers={"Authorization": f"Bearer {data['access_token']}"}
+            )
+            me_data = me_resp.json()
+            user_info_raw = me_data.get("data", {})
+            
+            return OAuthExchangeResponse(
+                access_token=data["access_token"],
+                refresh_token=data.get("refresh_token"),
+                expires_in=data.get("expires_in"),
+                user_info={
+                    "id": user_info_raw.get("id"),
+                    "username": user_info_raw.get("username"),
+                    "name": user_info_raw.get("name"),
+                    "profile_picture": user_info_raw.get("profile_image_url")
+                }
+            )
+
+        elif platform == 'google':
+             from ..auth.utils import exchange_google_code, get_google_user_info
+             token_data = await exchange_google_code(code, redirect_uri)
+             if not token_data:
+                 raise HTTPException(status_code=400, detail="Failed to exchange Google code")
+             
+             google_user = await get_google_user_info(token_data["access_token"])
+             return OAuthExchangeResponse(
+                 access_token=token_data["access_token"],
+                 refresh_token=token_data.get("refresh_token"),
+                 expires_in=token_data.get("expires_in"),
+                 user_info={
+                     "id": google_user.get("sub"),
+                     "name": google_user.get("name"),
+                     "profile_picture": google_user.get("picture"),
+                     "username": google_user.get("email")
+                 }
+             )
+
+        else:
+            raise HTTPException(status_code=400, detail=f"Exchange for platform {platform} not implemented yet")
 
 # --- Social Media Accounts ---
 

@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings
 from typing import List, Union
-from pydantic import field_validator
+from pydantic import field_validator, Field, AliasChoices
 import json
 
 class Settings(BaseSettings):
@@ -60,18 +60,27 @@ class Settings(BaseSettings):
     polar_secret_key: str = ""
     vite_polar_webhook_secret: str = ""
 
-    smtp_from_email: str = ""
+    # Mailtrap (API)
     mailtrap_api_key: str = ""
-    mailtrap_sender_email: str = "hello@getostrichai.com" # Default sender
+    mailtrap_sender_email: str = "noreply@getostrichai.com" 
+
+    # Mailtrap (SMTP)
+    smtp_server: str = "live.smtp.mailtrap.io"
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = "noreply@getostrichai.com" # Default sender
 
     # Supabase
     vite_supabase_url: str = ""
     vite_supabase_anon_key: str = ""
+    vite_app_url: str = Field("", validation_alias=AliasChoices("VITE_APP_URL", "APP_URL"))
 
     # Google OAuth
-    google_client_id: str = ""
-    google_client_secret: str = ""
-    vite_google_redirect_url: str = ""
+    # Google OAuth
+    google_client_id: str = Field("", validation_alias=AliasChoices("GOOGLE_CLIENT_ID", "VITE_GOOGLE_CLIENT_ID"))
+    google_client_secret: str = Field("", validation_alias=AliasChoices("GOOGLE_CLIENT_SECRET", "VITE_GOOGLE_CLIENT_SECRET"))
+    vite_google_redirect_url: str = Field("", validation_alias=AliasChoices("VITE_GOOGLE_REDIRECT_URL", "GOOGLE_REDIRECT_URL"))
 
     # Cloudinary
     vite_cloudinary_cloud_name: str = ""
@@ -87,6 +96,14 @@ class Settings(BaseSettings):
     linkedin_client_secret: str = ""
     instagram_app_id: str = ""
     instagram_app_secret: str = ""
+
+    # Twitter
+    twitter_client_id: str = ""
+    twitter_client_secret: str = ""
+
+    # TikTok
+    tiktok_client_key: str = ""
+    tiktok_client_secret: str = ""
 
     # AI / Other
     vite_kie_api_key: str = ""
