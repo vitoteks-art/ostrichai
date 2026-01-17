@@ -303,8 +303,8 @@ async def publish_social_post(
         return result
 
     except Exception as e:
-        print(f"Social Posting Error ({account.platform}): {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Social Posting Error ({account.platform}): {str(e)} | {repr(e)}")
+        raise HTTPException(status_code=500, detail=str(e) or "Social posting failed")
 
 # --- Platform Handlers ---
 
@@ -317,13 +317,34 @@ async def post_to_facebook(account, content):
     page_id = account.platform_user_id
     access_token = account.access_token
     image_urls = content.get('imageUrls', [])
+    video_url = content.get('videoUrl') or content.get('video_url')
+    if not video_url:
+        video_urls = content.get('videoUrls', []) or []
+        video_url = video_urls[0] if video_urls else None
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(120.0)) as client:
+        if video_url:
+            response = await client.post(
+                f"https://graph.facebook.com/v18.0/{page_id}/videos",
+                data={
+                    "file_url": video_url,
+                    "description": full_text,
+                    "access_token": access_token
+                }
+            )
+            data = response.json()
+            if "error" in data:
+                raise Exception(data["error"]["message"])
+            return {
+                "success": True,
+                "platformPostId": data.get("id"),
+                "platformPostUrl": f"https://facebook.com/{data.get('id')}" if data.get("id") else None
+            }
         if image_urls:
             if len(image_urls) == 1:
                 response = await client.post(
                     f"https://graph.facebook.com/v18.0/{page_id}/photos",
-                    json={
+                    data={
                         "url": image_urls[0],
                         "caption": full_text,
                         "access_token": access_token
@@ -343,7 +364,7 @@ async def post_to_facebook(account, content):
                 for url in image_urls:
                     res = await client.post(
                         f"https://graph.facebook.com/v18.0/{page_id}/photos",
-                        json={"url": url, "published": False, "access_token": access_token}
+                        data={"url": url, "published": False, "access_token": access_token}
                     )
                     d = res.json()
                     if "error" in d:
@@ -352,7 +373,7 @@ async def post_to_facebook(account, content):
                 
                 response = await client.post(
                     f"https://graph.facebook.com/v18.0/{page_id}/feed",
-                    json={
+                    data={
                         "message": full_text,
                         "attached_media": [{"media_fbid": pid} for pid in photo_ids],
                         "access_token": access_token
@@ -370,7 +391,7 @@ async def post_to_facebook(account, content):
             # Text only
             response = await client.post(
                 f"https://graph.facebook.com/v18.0/{page_id}/feed",
-                json={"message": full_text, "access_token": access_token}
+                data={"message": full_text, "access_token": access_token}
             )
             data = response.json()
             if "error" in data:
@@ -390,8 +411,13 @@ def log_error(message):
 
 async def post_to_instagram(account, content):
     image_urls = content.get('imageUrls', [])
-    if not image_urls:
-        raise Exception("Instagram requires at least one image.")
+    video_url = content.get('videoUrl') or content.get('video_url')
+    if not video_url:
+        video_urls = content.get('videoUrls', []) or []
+        video_url = video_urls[0] if video_urls else None
+
+    if not image_urls and not video_url:
+        raise Exception("Instagram requires at least one image or video.")
     
     full_text = content.get('text', '')
     hashtags = content.get('hashtags', [])
@@ -401,29 +427,43 @@ async def post_to_instagram(account, content):
     ig_user_id = account.platform_user_id
     access_token = account.access_token
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(120.0)) as client:
         # 1. Create Media Container
-        response = await client.post(
-            f"https://graph.facebook.com/v18.0/{ig_user_id}/media",
-            json={
-                "image_url": image_urls[0],
-                "caption": full_text,
-                "access_token": access_token
-            }
-        )
+        if video_url:
+            response = await client.post(
+                f"https://graph.facebook.com/v18.0/{ig_user_id}/media",
+                data={
+                    "video_url": video_url,
+                    "media_type": "REELS",
+                    "caption": full_text,
+                    "access_token": access_token
+                }
+            )
+        else:
+            response = await client.post(
+                f"https://graph.facebook.com/v18.0/{ig_user_id}/media",
+                data={
+                    "image_url": image_urls[0],
+                    "caption": full_text,
+                    "access_token": access_token
+                }
+            )
         data = response.json()
         if "error" in data:
-            error_details = json.dumps(data)
+            error_details = json.dumps({
+                "status": response.status_code,
+                "data": data
+            })
             print(f"Instagram Container Error Data: {error_details}")
             log_error(f"Instagram Container Error ({ig_user_id}): {error_details}")
-            raise Exception(f"Instagram Container Error: {data['error']['message']}")
+            raise Exception(f"Instagram Container Error: {data['error'].get('message', 'Unknown error')}")
         
         creation_id = data["id"]
 
         # 2. Poll for Status
         status = 'IN_PROGRESS'
         attempts = 0
-        while status != 'FINISHED' and attempts < 10:
+        while status != 'FINISHED' and attempts < 40:
             await asyncio.sleep(3)
             stat_res = await client.get(
                 f"https://graph.facebook.com/v18.0/{creation_id}?fields=status_code&access_token={access_token}"
@@ -440,7 +480,7 @@ async def post_to_instagram(account, content):
         # 3. Publish
         pub_res = await client.post(
             f"https://graph.facebook.com/v18.0/{ig_user_id}/media_publish",
-            json={"creation_id": creation_id, "access_token": access_token}
+            data={"creation_id": creation_id, "access_token": access_token}
         )
         pub_data = pub_res.json()
         if "error" in pub_data:
@@ -464,28 +504,37 @@ async def post_to_linkedin(account, content):
         author_urn = f"urn:li:person:{author_urn}"
 
     image_urls = content.get('imageUrls', [])
+    video_url = content.get('videoUrl') or content.get('video_url')
+    if not video_url:
+        video_urls = content.get('videoUrls', []) or []
+        video_url = video_urls[0] if video_urls else None
     
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(120.0)) as client:
         media_urn = None
-        if image_urls:
+        media_type = None
+
+        if video_url:
+            raise Exception("LinkedIn video posting is not supported for this app. Please use an image instead.")
+        elif image_urls:
+            media_type = "IMAGE"
             # Handle Single Image
             image_url = image_urls[0]
-            
+
             # A. Initialize
             init_res = await client.post(
                 "https://api.linkedin.com/rest/images?action=initializeUpload",
                 headers={
                     "Authorization": f"Bearer {account.access_token}",
-                    "LinkedIn-Version": "202306", 
+                    "LinkedIn-Version": "202306",
                     "X-Restli-Protocol-Version": "2.0.0",
                     "Content-Type": "application/json"
                 },
                 json={"initializeUploadRequest": {"owner": author_urn}}
             )
-            
+
             if init_res.status_code >= 400:
-                 raise Exception(f"LinkedIn Init Error: {init_res.text}")
-            
+                raise Exception(f"LinkedIn Init Error: {init_res.text}")
+
             init_data = init_res.json()
             upload_url = init_data['value']['uploadUrl']
             media_urn = init_data['value']['image']
@@ -494,10 +543,10 @@ async def post_to_linkedin(account, content):
             img_res = await client.get(image_url)
             if img_res.status_code != 200:
                 raise Exception("Failed to fetch image for LinkedIn upload")
-            
+
             up_res = await client.put(upload_url, content=img_res.content) # no auth header for PUT
             if up_res.status_code >= 400:
-                 raise Exception("Failed to upload image binary to LinkedIn")
+                raise Exception("Failed to upload image binary to LinkedIn")
 
         # Create Post
         post_data = {
@@ -532,6 +581,48 @@ async def post_to_linkedin(account, content):
         )
 
         if post_res.status_code >= 400:
+            # Fallback to legacy ugcPosts if REST posts endpoint isn't available for this app
+            if post_res.status_code == 404 and "No root resource defined" in post_res.text:
+                if media_type == "VIDEO":
+                    raise Exception("LinkedIn REST posts endpoint is unavailable for this app. Video posting requires REST access.")
+
+                ugc_payload = {
+                    "author": author_urn,
+                    "lifecycleState": "PUBLISHED",
+                    "specificContent": {
+                        "com.linkedin.ugc.ShareContent": {
+                            "shareCommentary": {"text": full_text},
+                            "shareMediaCategory": "IMAGE" if media_urn else "NONE"
+                        }
+                    },
+                    "visibility": {
+                        "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
+                    }
+                }
+                if media_urn:
+                    ugc_payload["specificContent"]["com.linkedin.ugc.ShareContent"]["media"] = [
+                        {"status": "READY", "media": media_urn, "title": {"text": "Image"}}
+                    ]
+
+                ugc_res = await client.post(
+                    "https://api.linkedin.com/v2/ugcPosts",
+                    headers={
+                        "Authorization": f"Bearer {account.access_token}",
+                        "Content-Type": "application/json"
+                    },
+                    json=ugc_payload
+                )
+                if ugc_res.status_code >= 400:
+                    raise Exception(f"LinkedIn Post Error: {ugc_res.text}")
+
+                ugc_data = ugc_res.json()
+                post_id = ugc_data.get("id")
+                return {
+                    "success": True,
+                    "platformPostId": post_id,
+                    "platformPostUrl": f"https://www.linkedin.com/feed/update/{post_id}" if post_id else None
+                }
+
             raise Exception(f"LinkedIn Post Error: {post_res.text}")
             
         post_id = post_res.headers.get('x-linkedin-id')
