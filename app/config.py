@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     allowed_origins: Union[List[str], str] = [
         "https://app.getostrichai.com",
         "http://app.getostrichai.com",
+        "https://getostrichai.com",
+        "http://getostrichai.com",
         "http://localhost:3000",
         "http://localhost:5173"
     ]

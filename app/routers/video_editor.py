@@ -100,6 +100,7 @@ async def trim_video(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     keep_json: str = Form(...),
+    reencode: bool = False,
     current_user: User = Depends(get_current_user),
 ):
     _ensure_ffmpeg_available()
@@ -118,6 +119,7 @@ async def trim_video(
 
     tmp_path = Path(tmp_dir)
     input_suffix = Path(file.filename or "").suffix or ".mp4"
+    output_suffix = ".mp4" if reencode else input_suffix
     input_path = tmp_path / f"input{input_suffix}"
     _save_upload(file, input_path)
 
@@ -132,26 +134,57 @@ async def trim_video(
         if float(start) < 0 or float(end) <= float(start):
             raise HTTPException(status_code=400, detail="Segments must have end > start >= 0")
 
-        part_path = tmp_path / f"part_{idx}{input_suffix}"
-        _run_ffmpeg(
-            [
-                "ffmpeg",
-                "-y",
-                "-ss",
-                str(start),
-                "-to",
-                str(end),
-                "-i",
-                str(input_path),
-                "-c",
-                "copy",
-                "-avoid_negative_ts",
-                "1",
-                "-reset_timestamps",
-                "1",
-                str(part_path),
-            ]
-        )
+        part_path = tmp_path / f"part_{idx}{output_suffix}"
+        if reencode:
+            _run_ffmpeg(
+                [
+                    "ffmpeg",
+                    "-y",
+                    "-i",
+                    str(input_path),
+                    "-ss",
+                    str(start),
+                    "-to",
+                    str(end),
+                    "-c:v",
+                    "libx264",
+                    "-preset",
+                    "medium",
+                    "-crf",
+                    "18",
+                    "-c:a",
+                    "aac",
+                    "-b:a",
+                    "192k",
+                    "-movflags",
+                    "+faststart",
+                    "-avoid_negative_ts",
+                    "1",
+                    "-reset_timestamps",
+                    "1",
+                    str(part_path),
+                ]
+            )
+        else:
+            _run_ffmpeg(
+                [
+                    "ffmpeg",
+                    "-y",
+                    "-ss",
+                    str(start),
+                    "-to",
+                    str(end),
+                    "-i",
+                    str(input_path),
+                    "-c",
+                    "copy",
+                    "-avoid_negative_ts",
+                    "1",
+                    "-reset_timestamps",
+                    "1",
+                    str(part_path),
+                ]
+            )
         part_paths.append(part_path)
 
     if len(part_paths) == 1:
@@ -162,7 +195,7 @@ async def trim_video(
             "\n".join([f"file '{p.as_posix()}'" for p in part_paths]),
             encoding="utf-8",
         )
-        output_path = tmp_path / _build_output_name("trimmed", input_suffix)
+        output_path = tmp_path / _build_output_name("trimmed", output_suffix)
         _run_ffmpeg(
             [
                 "ffmpeg",
