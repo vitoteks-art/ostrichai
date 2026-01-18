@@ -41,8 +41,8 @@ def _build_output_name(base: str, suffix: str) -> str:
 
 @router.post("/concat")
 async def concat_videos(
-    files: List[UploadFile] = File(...),
     background_tasks: BackgroundTasks,
+    files: List[UploadFile] = File(...),
     current_user: User = Depends(get_current_user),
 ):
     if len(files) < 2:
@@ -97,9 +97,9 @@ async def concat_videos(
 
 @router.post("/trim")
 async def trim_video(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     keep_json: str = Form(...),
-    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
 ):
     _ensure_ffmpeg_available()
