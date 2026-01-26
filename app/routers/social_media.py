@@ -123,6 +123,101 @@ async def exchange_oauth_code(
                 }
             )
 
+        elif platform == 'linkedin':
+            client_id = settings.linkedin_client_id
+            client_secret = settings.linkedin_client_secret
+            if not client_id or not client_secret:
+                raise HTTPException(status_code=400, detail="LinkedIn OAuth is not configured")
+
+            resp = await client.post(
+                "https://www.linkedin.com/oauth/v2/accessToken",
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                data={
+                    "grant_type": "authorization_code",
+                    "code": code,
+                    "redirect_uri": redirect_uri,
+                    "client_id": client_id,
+                    "client_secret": client_secret
+                }
+            )
+            data = resp.json()
+            if resp.status_code != 200 or "error" in data:
+                print(f"LinkedIn OAuth Error: {resp.status_code} - {data}", flush=True)
+                raise HTTPException(status_code=400, detail=data.get("error_description", "OAuth failed"))
+
+            access_token = data["access_token"]
+            
+            # Fetch personal user info
+            user_info_resp = await client.get(
+                "https://api.linkedin.com/v2/userinfo",
+                headers={"Authorization": f"Bearer {access_token}"}
+            )
+            user_info_raw = user_info_resp.json()
+            user_info = {
+                "id": user_info_raw.get("sub"),
+                "name": user_info_raw.get("name"),
+                "profile_picture": user_info_raw.get("picture")
+            }
+
+            # Initialize accounts list with personal profile
+            accounts = [
+                {
+                    "id": user_info["id"],
+                    "name": user_info["name"],
+                    "type": "personal",
+                    "platform_user_id": user_info["id"],
+                    "access_token": access_token
+                }
+            ]
+
+            # Try to fetch managed organizations (LinkedIn Pages)
+            try:
+                # 1. Get ACLs for organizations where user is an admin
+                org_acl_resp = await client.get(
+                    "https://api.linkedin.com/v2/organizationalEntityAcls?q=roleAssignee&role=ADMINISTRATOR&state=APPROVED",
+                    headers={"Authorization": f"Bearer {access_token}"}
+                )
+                
+                if org_acl_resp.status_code == 200:
+                    org_acl_data = org_acl_resp.json()
+                    
+                    for element in org_acl_data.get("elements", []):
+                        org_urn = element.get("organizationalTarget")
+                        if not org_urn:
+                            continue
+                            
+                        # 2. Extract org ID and fetch organization details
+                        org_id = org_urn.split(":")[-1]
+                        org_info_resp = await client.get(
+                            f"https://api.linkedin.com/v2/organizations/{org_id}",
+                            headers={"Authorization": f"Bearer {access_token}"}
+                        )
+                        
+                        if org_info_resp.status_code == 200:
+                            org_info = org_info_resp.json()
+                            accounts.append({
+                                "id": org_urn,
+                                "name": org_info.get("localizedName", f"LinkedIn Page ({org_id})"),
+                                "type": "page",
+                                "platform_user_id": org_urn,
+                                "access_token": access_token
+                            })
+                        else:
+                            print(f"Failed to fetch info for org {org_urn}: {org_info_resp.status_code} - {org_info_resp.text}")
+                else:
+                    print(f"Failed to fetch LinkedIn ACLs: {org_acl_resp.status_code} - {org_acl_resp.text}")
+                    
+            except Exception as e:
+                print(f"Error fetching LinkedIn organizations: {str(e)}")
+
+            return OAuthExchangeResponse(
+                access_token=access_token,
+                expires_in=data.get("expires_in"),
+                token_type=data.get("token_type"),
+                user_info=user_info,
+                accounts=accounts
+            )
+
         elif platform == 'google':
              from ..auth.utils import exchange_google_code, get_google_user_info
              token_data = await exchange_google_code(code, redirect_uri)

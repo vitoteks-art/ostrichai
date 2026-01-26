@@ -88,25 +88,25 @@ class Settings(BaseSettings):
     vite_cloudinary_cloud_name: str = ""
     vite_cloudinary_upload_preset: str = ""
     vite_cloudinary_api_key: str = ""
+
+    # TikTok
+    tiktok_client_key: str = ""
+    tiktok_client_secret: str = ""
+
     vite_cloudinary_api_secret: str = ""
 
     # Social Media
+    linkedin_client_id: str = Field("", validation_alias=AliasChoices("LINKEDIN_CLIENT_ID", "VITE_LINKEDIN_CLIENT_ID"))
+    linkedin_client_secret: str = Field("", validation_alias=AliasChoices("LINKEDIN_CLIENT_SECRET", "VITE_LINKEDIN_CLIENT_SECRET"))
     vite_facebook_app_id: str = ""
     facebook_app_id: str = ""
     facebook_app_secret: str = ""
-    vite_linkedin_client_id: str = ""
-    linkedin_client_secret: str = ""
     instagram_app_id: str = ""
     instagram_app_secret: str = ""
 
     # Twitter
     twitter_client_id: str = ""
     twitter_client_secret: str = ""
-
-    # TikTok
-    tiktok_client_key: str = ""
-    tiktok_client_secret: str = ""
-
     # AI / Other
     vite_kie_api_key: str = ""
     vite_imgbb_api_key: str = ""
