@@ -126,7 +126,9 @@ async def exchange_oauth_code(
         elif platform == 'linkedin':
             client_id = settings.linkedin_client_id
             client_secret = settings.linkedin_client_secret
+            
             if not client_id or not client_secret:
+                print(f"DEBUG: LinkedIn Config Check - client_id: {'PRESENT' if client_id else 'MISSING'}, client_secret: {'PRESENT' if client_secret else 'MISSING'}", flush=True)
                 raise HTTPException(status_code=400, detail="LinkedIn OAuth is not configured")
 
             resp = await client.post(
