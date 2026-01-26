@@ -79,7 +79,6 @@ class Settings(BaseSettings):
     vite_app_url: str = Field("", validation_alias=AliasChoices("VITE_APP_URL", "APP_URL"))
 
     # Google OAuth
-    # Google OAuth
     google_client_id: str = Field("", validation_alias=AliasChoices("GOOGLE_CLIENT_ID", "VITE_GOOGLE_CLIENT_ID"))
     google_client_secret: str = Field("", validation_alias=AliasChoices("GOOGLE_CLIENT_SECRET", "VITE_GOOGLE_CLIENT_SECRET"))
     vite_google_redirect_url: str = Field("", validation_alias=AliasChoices("VITE_GOOGLE_REDIRECT_URL", "GOOGLE_REDIRECT_URL"))

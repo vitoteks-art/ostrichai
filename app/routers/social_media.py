@@ -128,12 +128,7 @@ async def exchange_oauth_code(
             client_secret = settings.linkedin_client_secret
             
             if not client_id or not client_secret:
-                missing = []
-                if not client_id: missing.append("LINKEDIN_CLIENT_ID")
-                if not client_secret: missing.append("LINKEDIN_CLIENT_SECRET")
-                error_msg = f"LinkedIn OAuth is not configured. Missing: {', '.join(missing)}"
-                print(f"DEBUG: {error_msg}", flush=True)
-                raise HTTPException(status_code=400, detail=error_msg)
+                raise HTTPException(status_code=400, detail="LinkedIn OAuth is not configured")
 
             resp = await client.post(
                 "https://www.linkedin.com/oauth/v2/accessToken",
