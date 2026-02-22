@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Sensitive files
+.env
+*.env
+
+# Database dumps
+*.sql
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test files
+test_*.py
+debug_*.py
+
+# Logs
+*.log
+import_log.txt
+
+# JSON temp files
+polar_catalog.json
+polar_error.json
+price_ids.txt
+
+# Temporary files
+*.txt
+!requirements.txt
