@@ -1,0 +1,5 @@
+{
+  "name": "Kie.ai Background Remover",
+  "description": "Remove image backgrounds instantly using the Recraft model via Kie.ai API.",
+  "requestFramePermissions": []
+}
