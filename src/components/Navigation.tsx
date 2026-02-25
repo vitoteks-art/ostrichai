@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Video, Sparkles, User, LogOut, LogIn, ChevronDown, Palette, Film, Layout, BarChart3, Crown, CreditCard, Calendar, Clock, Share2, Shield } from "lucide-react";
+import { Menu, X, Video, Sparkles, User, LogOut, LogIn, ChevronDown, Palette, Film, Layout, BarChart3, Crown, CreditCard, Calendar, Clock, Share2, Shield, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -41,12 +41,20 @@ const Navigation = () => {
     }
   }, [isMobile, isMenuOpen]);
 
+  const resourcesMenu = {
+    title: "Resources",
+    icon: BookOpen,
+    items: [
+      { path: "/blog", label: "Blog" },
+      { path: "/user-guide", label: "User Guide" },
+    ],
+  };
+
   const navGroups = [
     {
       title: "Main",
       items: [
         { path: "/", label: "Home" },
-        { path: "/user-guide", label: "User Guide" },
         { path: "/contact", label: "Contact" },
         { path: "/revenue-audit", label: "Revenue Audit" },
         { path: "/solutions", label: "Solutions" },
@@ -54,6 +62,10 @@ const Navigation = () => {
         { path: "/pricing", label: "Pricing" }
       ],
     },
+    {
+      title: "Resources",
+      items: resourcesMenu.items,
+    }
   ];
 
   // Filter menu items based on subscription access
@@ -192,6 +204,36 @@ const Navigation = () => {
                   </Link>
                 ))
               )}
+              {/* Resources Dropdown (Blog + User Guide) */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="flex items-center space-x-1 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                    aria-label="Resources menu"
+                  >
+                    <resourcesMenu.icon className="h-4 w-4" aria-hidden="true" />
+                    <span>{resourcesMenu.title}</span>
+                    <ChevronDown className="h-3 w-3" aria-hidden="true" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-44">
+                  <DropdownMenuLabel>{resourcesMenu.title}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {resourcesMenu.items.map((item) => (
+                    <DropdownMenuItem key={item.path} asChild>
+                      <Link
+                        to={item.path}
+                        className={`w-full ${isActive(item.path) ? "bg-primary/10 text-primary" : ""}`}
+                        aria-current={isActive(item.path) ? "page" : undefined}
+                      >
+                        {item.label}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <div className="h-6 w-px bg-border/50 mx-3" aria-hidden="true" />
 
               {/* Product Dropdown Menu */}
