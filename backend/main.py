@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from app.database import engine
 from app.models import Base
 from app.routers import auth, users, subscriptions, payments, referrals, admin, projects, social_media, campaigns, social_analytics, bookings, emails, video_editor, blog, admin_blog
@@ -30,8 +31,12 @@ app = FastAPI(
 )
 
 # Serve uploaded files (local uploads)
-# NOTE: directory path is relative to backend/ working directory.
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+# Production-safe: ensure the directory exists even on fresh deploy.
+UPLOADS_DIR = Path(__file__).resolve().parent / "uploads"
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+(UPLOADS_DIR / "blog").mkdir(parents=True, exist_ok=True)
+
+app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 
 # Configure CORS
 origins = settings.allowed_origins

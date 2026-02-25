@@ -1,4 +1,3 @@
-import os
 import uuid
 from pathlib import Path
 
@@ -29,6 +28,9 @@ def _safe_ext(filename: str, content_type: str | None) -> str:
     return ".jpg"
 
 
+MAX_IMAGE_BYTES = 5 * 1024 * 1024  # 5MB
+
+
 @router.post("/blog/cover")
 async def upload_blog_cover(
     file: UploadFile = File(...),
@@ -40,22 +42,26 @@ async def upload_blog_cover(
     if not (file.content_type or "").startswith("image/"):
         raise HTTPException(status_code=400, detail="Only image uploads are allowed")
 
-    # store uploads inside backend/uploads
-    base_dir = Path(__file__).resolve().parents[2]  # backend/app
-    uploads_dir = base_dir.parent / "uploads" / "blog"
+    # store uploads inside backend/uploads/blog
+    backend_dir = Path(__file__).resolve().parents[2].parent  # .../backend
+    uploads_dir = backend_dir / "uploads" / "blog"
     uploads_dir.mkdir(parents=True, exist_ok=True)
 
     ext = _safe_ext(file.filename or "", file.content_type)
     name = f"{uuid.uuid4().hex}{ext}"
     dest = uploads_dir / name
 
-    # Stream to disk
+    # Stream to disk with size limit
+    written = 0
     try:
         with dest.open("wb") as out:
             while True:
                 chunk = await file.read(1024 * 1024)
                 if not chunk:
                     break
+                written += len(chunk)
+                if written > MAX_IMAGE_BYTES:
+                    raise HTTPException(status_code=413, detail="Image too large (max 5MB)")
                 out.write(chunk)
     finally:
         await file.close()
