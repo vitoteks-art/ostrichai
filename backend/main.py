@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine
 from app.models import Base
-from app.routers import auth, users, subscriptions, payments, referrals, admin, projects, social_media, campaigns, social_analytics, bookings, emails, video_editor
+from app.routers import auth, users, subscriptions, payments, referrals, admin, projects, social_media, campaigns, social_analytics, bookings, emails, video_editor, blog, admin_blog
 
 from contextlib import asynccontextmanager
 
@@ -59,6 +59,8 @@ app.include_router(campaigns.router, prefix="/api/campaigns", tags=["Ad Campaign
 app.include_router(bookings.router, prefix="/api/bookings", tags=["Bookings"])
 app.include_router(emails.router, prefix="/api/emails", tags=["Emails"])
 app.include_router(video_editor.router, prefix="/api/video", tags=["Video Editing"])
+app.include_router(blog.router, prefix="/api/blog", tags=["Blog"])
+app.include_router(admin_blog.router, prefix="/api/admin/blog", tags=["Admin Blog"])
 
 @app.get("/")
 async def root():

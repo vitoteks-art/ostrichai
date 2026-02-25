@@ -38,6 +38,12 @@ import Subscription from "./pages/Subscription";
 import Pricing from "./pages/Pricing";
 import BlogResearch from "./pages/BlogResearch";
 import UserGuide from "./pages/UserGuide";
+import BlogHome from "./pages/BlogHome";
+import BlogDetail from "./pages/BlogDetail";
+import AdminBlogPosts from "./pages/AdminBlogPosts";
+import AdminBlogEditor from "./pages/AdminBlogEditor";
+import AdminBlogComments from "./pages/AdminBlogComments";
+import AdminBlogAudit from "./pages/AdminBlogAudit";
 
 import Contact from "./pages/Contact";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -96,6 +102,8 @@ const App = () => (
                     <Route path="/seo-audit" element={<SeoAudit />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/user-guide" element={<UserGuide />} />
+                    <Route path="/blog" element={<BlogHome />} />
+                    <Route path="/blog/:slug" element={<BlogDetail />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/verify-email" element={<VerifyEmail />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -334,6 +342,33 @@ const App = () => (
                     <Route path="/admin/emails/edit/:campaignId" element={
                       <ProtectedAdminRoute requiredRole="admin">
                         <AdminEmailComposer />
+                      </ProtectedAdminRoute>
+                    } />
+
+                    {/* Admin Blog */}
+                    <Route path="/admin/blog/posts" element={
+                      <ProtectedAdminRoute requiredRole="admin">
+                        <AdminBlogPosts />
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/blog/posts/new" element={
+                      <ProtectedAdminRoute requiredRole="admin">
+                        <AdminBlogEditor />
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/blog/posts/:id/edit" element={
+                      <ProtectedAdminRoute requiredRole="admin">
+                        <AdminBlogEditor />
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/blog/comments" element={
+                      <ProtectedAdminRoute requiredRole="admin">
+                        <AdminBlogComments />
+                      </ProtectedAdminRoute>
+                    } />
+                    <Route path="/admin/blog/audit" element={
+                      <ProtectedAdminRoute requiredRole="admin">
+                        <AdminBlogAudit />
                       </ProtectedAdminRoute>
                     } />
 

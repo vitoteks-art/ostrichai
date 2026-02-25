@@ -25,6 +25,7 @@ from .referral_submissions import ReferralFormSubmission
 from .user_role import UserRole
 from .booking import MeetingType, Appointment, AvailabilitySetting, BookingSetting
 from .email import EmailTemplate, EmailCampaign, EmailSend, EmailLog
+from .blog import BlogPost, BlogComment, BlogPostAuditLog
 
 # Import all models for Alembic
 __all__ = [
@@ -62,5 +63,8 @@ __all__ = [
     "EmailTemplate",
     "EmailCampaign",
     "EmailSend",
-    "EmailLog"
+    "EmailLog",
+    "BlogPost",
+    "BlogComment",
+    "BlogPostAuditLog"
 ]
