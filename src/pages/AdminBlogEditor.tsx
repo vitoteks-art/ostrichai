@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { ProtectedAdminRoute } from '@/components/ProtectedAdminRoute';
@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { uploadToImgbb } from '@/services/imgbbService';
+import { uploadToCloudinary } from '@/services/cloudinaryService';
 
 function slugify(input: string) {
   return input
@@ -37,6 +39,8 @@ const AdminBlogEditor: React.FC = () => {
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
   const [coverImageUrl, setCoverImageUrl] = useState('');
+  const [coverUploading, setCoverUploading] = useState(false);
+  const coverFileRef = useRef<HTMLInputElement | null>(null);
 
   const tagsArr = useMemo(() => tags.split(',').map(t => t.trim()).filter(Boolean), [tags]);
 
@@ -96,6 +100,25 @@ const AdminBlogEditor: React.FC = () => {
     if (!id) return;
     const updated = await BlogService.adminSetPostStatus(id, status);
     setPost(updated);
+  };
+
+  const uploadCoverImage = async (file: File) => {
+    setCoverUploading(true);
+    try {
+      const imgbbKey = import.meta.env.VITE_IMGBB_API_KEY || '';
+      let url: string;
+
+      if (imgbbKey) {
+        url = await uploadToImgbb(file, imgbbKey);
+      } else {
+        // fallback to Cloudinary if configured
+        url = await uploadToCloudinary(file);
+      }
+
+      setCoverImageUrl(url);
+    } finally {
+      setCoverUploading(false);
+    }
   };
 
   return (
@@ -186,9 +209,56 @@ const AdminBlogEditor: React.FC = () => {
                       <label className="text-xs text-muted-foreground">Meta Description</label>
                       <Textarea value={seoDescription} onChange={(e) => setSeoDescription(e.target.value)} rows={3} />
                     </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground">Cover Image URL</label>
-                      <Input value={coverImageUrl} onChange={(e) => setCoverImageUrl(e.target.value)} placeholder="https://..." />
+                    <div className="space-y-2">
+                      <label className="text-xs text-muted-foreground">Featured Image</label>
+
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => coverFileRef.current?.click()}
+                          disabled={coverUploading}
+                        >
+                          {coverUploading ? 'Uploading…' : 'Upload image'}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setCoverImageUrl('')}
+                          disabled={coverUploading || !coverImageUrl}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+
+                      <input
+                        ref={coverFileRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          await uploadCoverImage(file);
+                          // reset input so same file can be selected again
+                          e.currentTarget.value = '';
+                        }}
+                      />
+
+                      <div>
+                        <label className="text-xs text-muted-foreground">Or paste image URL</label>
+                        <Input value={coverImageUrl} onChange={(e) => setCoverImageUrl(e.target.value)} placeholder="https://..." />
+                      </div>
+
+                      {coverImageUrl ? (
+                        <div className="rounded-lg overflow-hidden border border-border/60 bg-muted aspect-video">
+                          <img src={coverImageUrl} alt="Featured" className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="text-xs text-muted-foreground">
+                          Tip: set <code>VITE_IMGBB_API_KEY</code> (preferred) or Cloudinary env vars to enable direct uploads.
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
