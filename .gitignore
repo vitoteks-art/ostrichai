@@ -39,3 +39,5 @@ vite.config.ts.timestamp-*
 # Sensitive data
 migration_data.sql
 New
+_handoff/
+backend/.venv/
