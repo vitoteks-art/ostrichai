@@ -61,10 +61,6 @@ const Navigation = () => {
         { path: "/industries", label: "Industries" },
         { path: "/pricing", label: "Pricing" }
       ],
-    },
-    {
-      title: "Resources",
-      items: resourcesMenu.items,
     }
   ];
 
@@ -607,6 +603,32 @@ const Navigation = () => {
                       </div>
                     </div>
                   ))}
+
+                  {/* Resources in Mobile */}
+                  <div className="space-y-3">
+                    <div className="px-2">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center space-x-2">
+                        <resourcesMenu.icon className="h-4 w-4" aria-hidden="true" />
+                        <span>{resourcesMenu.title}</span>
+                      </h3>
+                    </div>
+                    <div className="space-y-1">
+                      {resourcesMenu.items.map((item) => (
+                        <Link
+                          key={item.path}
+                          to={item.path}
+                          className={`flex items-center px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${isActive(item.path)
+                            ? "bg-primary/10 text-primary border border-primary/20"
+                            : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                            }`}
+                          onClick={() => setIsMenuOpen(false)}
+                          aria-current={isActive(item.path) ? "page" : undefined}
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
                   {dropdownMenus.map((menu) => (
                     <div key={menu.title} className="space-y-3">
                       <div className="px-2">
