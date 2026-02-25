@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.database import engine
 from app.models import Base
 from app.routers import auth, users, subscriptions, payments, referrals, admin, projects, social_media, campaigns, social_analytics, bookings, emails, video_editor, blog, admin_blog
+from app.routers import uploads
 
 from contextlib import asynccontextmanager
 
@@ -26,6 +28,10 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# Serve uploaded files (local uploads)
+# NOTE: directory path is relative to backend/ working directory.
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Configure CORS
 origins = settings.allowed_origins
@@ -61,6 +67,7 @@ app.include_router(emails.router, prefix="/api/emails", tags=["Emails"])
 app.include_router(video_editor.router, prefix="/api/video", tags=["Video Editing"])
 app.include_router(blog.router, prefix="/api/blog", tags=["Blog"])
 app.include_router(admin_blog.router, prefix="/api/admin/blog", tags=["Admin Blog"])
+app.include_router(uploads.router, prefix="/api/admin/uploads", tags=["Uploads"])
 
 @app.get("/")
 async def root():

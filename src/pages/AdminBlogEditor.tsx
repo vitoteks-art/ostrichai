@@ -9,8 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { uploadToImgbb } from '@/services/imgbbService';
-import { uploadToCloudinary } from '@/services/cloudinaryService';
 
 function slugify(input: string) {
   return input
@@ -105,15 +103,34 @@ const AdminBlogEditor: React.FC = () => {
   const uploadCoverImage = async (file: File) => {
     setCoverUploading(true);
     try {
-      const imgbbKey = import.meta.env.VITE_IMGBB_API_KEY || '';
-      let url: string;
+      // Local upload to FastAPI (admin-only)
+      const token = localStorage.getItem('auth_token');
+      if (!token) throw new Error('Not authenticated');
 
-      if (imgbbKey) {
-        url = await uploadToImgbb(file, imgbbKey);
-      } else {
-        // fallback to Cloudinary if configured
-        url = await uploadToCloudinary(file);
+      const form = new FormData();
+      form.append('file', file);
+
+      // VITE_API_URL is like http://host:8001/api
+      const apiBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api').replace(/\/$/, '');
+      const resp = await fetch(`${apiBase}/admin/uploads/blog/cover`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: form,
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.detail || `Upload failed (${resp.status})`);
       }
+
+      const data = await resp.json();
+      const path = data.path as string;
+
+      // Turn /uploads/... into absolute URL on same API host
+      const fileBase = apiBase.replace(/\/api$/, '');
+      const url = `${fileBase}${path}`;
 
       setCoverImageUrl(url);
     } finally {

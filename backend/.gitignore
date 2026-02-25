@@ -29,6 +29,9 @@ debug_*.py
 *.log
 import_log.txt
 
+# Uploads
+uploads/
+
 # JSON temp files
 polar_catalog.json
 polar_error.json
