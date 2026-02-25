@@ -10,7 +10,6 @@ import { Alert, AlertDescription } from './ui/alert'
 import { Loader2, Mail, Lock, Eye, EyeOff, User } from 'lucide-react'
 import { ReferralService } from '../services/referralService'
 import { API_BASE_URL } from '../lib/api'
-import { supabase } from '../lib/supabase'
 
 interface AuthProps {
   onSuccess?: () => void

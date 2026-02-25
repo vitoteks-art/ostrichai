@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Ostrich AI Blog Home</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#5044ee",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#0b0b0f",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .glass-nav {
+            background: rgba(11, 11, 15, 0.8);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display transition-colors duration-300">
+<!-- Global Header -->
+<header class="sticky top-0 z-50 glass-nav border-b border-primary/10 px-6 py-4">
+<div class="max-w-7xl mx-auto flex items-center justify-between">
+<div class="flex items-center gap-12">
+<div class="flex items-center gap-3">
+<div class="bg-primary p-1.5 rounded-lg">
+<svg class="w-6 h-6 text-white" fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M24 45.8096C19.6865 45.8096 15.4698 44.5305 11.8832 42.134C8.29667 39.7376 5.50128 36.3314 3.85056 32.3462C2.19985 28.361 1.76794 23.9758 2.60947 19.7452C3.451 15.5145 5.52816 11.6284 8.57829 8.5783C11.6284 5.52817 15.5145 3.45101 19.7452 2.60948C23.9758 1.76795 28.361 2.19986 32.3462 3.85057C36.3314 5.50129 39.7376 8.29668 42.134 11.8833C44.5305 15.4698 45.8096 19.6865 45.8096 24L24 24L24 45.8096Z" fill="currentColor"></path>
+</svg>
+</div>
+<span class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white uppercase">Ostrich AI</span>
+</div>
+<nav class="hidden md:flex items-center gap-8 text-sm font-semibold tracking-wide">
+<a class="hover:text-primary transition-colors" href="#">Product</a>
+<a class="hover:text-primary transition-colors" href="#">Solutions</a>
+<a class="text-primary border-b-2 border-primary pb-1" href="#">Blog</a>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
+<input class="bg-slate-200/50 dark:bg-primary/10 border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/50 w-64" placeholder="Search insights..." type="text"/>
+</div>
+<button class="bg-primary hover:bg-primary/90 text-white font-bold py-2 px-6 rounded-lg text-sm transition-all transform hover:scale-[1.02]">
+                    Get Started
+                </button>
+</div>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-6 py-10">
+<!-- Hero Section & Trending Split -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-10 mb-20">
+<!-- Left: Featured Article -->
+<div class="lg:col-span-8 group cursor-pointer">
+<div class="relative overflow-hidden rounded-xl mb-6">
+<div class="aspect-[16/9] w-full bg-slate-200 dark:bg-slate-800 transition-transform duration-700 group-hover:scale-105" data-alt="Abstract neural network graphic with glowing lines" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBfcgMtwp5Hcn0HPXWGidd_TKAdfWnkedIljuHbNsM7XfSnPjOBeI2YQ6SkMF1oc4DmCakPVndi_md4GJdHTXZ4xAEHD8g6GmzCDE9NlsUalSIufBG2Ov4rF3rkDrqZGJq28jpgKiMfFw5_yjrLXF_aW4fYbmchWQeLvoM4d9hpu8R6GrctoZxit-yiTmcWM0pgaf79OBe7KW-wqJMMjcMcUOUir84Rq41ZgDwQdKCKedNpI7gjg-RrrcjcsQ6w---MQVzDOC8oIzY'); background-size: cover; background-position: center;">
+</div>
+<div class="absolute top-4 left-4">
+<span class="bg-primary text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full shadow-lg">Featured Article</span>
+</div>
+</div>
+<div>
+<div class="flex items-center gap-3 text-primary text-sm font-bold mb-3 uppercase tracking-wider">
+<span>AI Research</span>
+<span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+<span class="text-slate-500 dark:text-slate-400 font-medium">12 Min Read</span>
+</div>
+<h1 class="text-4xl md:text-5xl font-black text-slate-900 dark:text-white leading-[1.1] mb-4 group-hover:text-primary transition-colors">
+                        The Future of LLMs: Scaling Ostrich AI’s Neural Engine
+                    </h1>
+<p class="text-lg text-slate-600 dark:text-slate-400 leading-relaxed mb-6 max-w-2xl">
+                        Deep dive into our latest architectural breakthroughs in neural processing and how they're shaping the next generation of generative AI solutions for enterprise.
+                    </p>
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full border-2 border-primary/20 p-0.5">
+<img alt="Dr. Aris Thorne" class="w-full h-full rounded-full object-cover" data-alt="Professional portrait of Dr. Aris Thorne" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqJ-NbmwEvMysL9JVDC0VWhw_yDtnjQ2zI-APpIHpeaYmUSUPiDkJ8Cfap73HcsImwfmFKYF_vHfGIUtP_Kv2oqnCs6daOMcqgtQV9lAxdRQiED4SI-JWhNwQrsGVDqLLZuQ2sG7E5CbwVU1mNwiOVhyz9CVHByFMz9uxn74TFfb2x771ZlARZIt3nTaXY7yrCszOG4AvKqpR06PeVVji48lqBTwjt0rRV_vhCh93jsnWKIZqh1J_CZdr5tdVTKZzB36gIoZ5Qvg0"/>
+</div>
+<div>
+<p class="font-bold text-slate-900 dark:text-white">Dr. Aris Thorne</p>
+<p class="text-xs text-slate-500 font-medium uppercase tracking-tighter">Chief Scientist • Oct 24, 2023</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Right: Trending Now -->
+<div class="lg:col-span-4">
+<div class="flex items-center gap-2 mb-8">
+<span class="material-symbols-outlined text-primary font-bold">trending_up</span>
+<h2 class="text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white">Trending Now</h2>
+</div>
+<div class="space-y-8">
+<!-- Trending Item 1 -->
+<div class="flex gap-5 group cursor-pointer">
+<span class="text-4xl font-black text-primary/20 group-hover:text-primary transition-colors">01</span>
+<div>
+<span class="text-[10px] font-bold text-primary uppercase mb-1 block">Engineering</span>
+<h3 class="font-bold text-slate-900 dark:text-slate-100 group-hover:underline decoration-primary underline-offset-4">Optimizing Inference Latency for Real-time Apps</h3>
+<p class="text-xs text-slate-500 mt-1">4 min read</p>
+</div>
+</div>
+<!-- Trending Item 2 -->
+<div class="flex gap-5 group cursor-pointer">
+<span class="text-4xl font-black text-primary/20 group-hover:text-primary transition-colors">02</span>
+<div>
+<span class="text-[10px] font-bold text-primary uppercase mb-1 block">Case Studies</span>
+<h3 class="font-bold text-slate-900 dark:text-slate-100 group-hover:underline decoration-primary underline-offset-4">How Global Logistics Cut Costs by 40% with Ostrich</h3>
+<p class="text-xs text-slate-500 mt-1">6 min read</p>
+</div>
+</div>
+<!-- Trending Item 3 -->
+<div class="flex gap-5 group cursor-pointer">
+<span class="text-4xl font-black text-primary/20 group-hover:text-primary transition-colors">03</span>
+<div>
+<span class="text-[10px] font-bold text-primary uppercase mb-1 block">Ethics</span>
+<h3 class="font-bold text-slate-900 dark:text-slate-100 group-hover:underline decoration-primary underline-offset-4">Guidelines for Responsible Generative AI</h3>
+<p class="text-xs text-slate-500 mt-1">8 min read</p>
+</div>
+</div>
+<!-- Trending Item 4 -->
+<div class="flex gap-5 group cursor-pointer">
+<span class="text-4xl font-black text-primary/20 group-hover:text-primary transition-colors">04</span>
+<div>
+<span class="text-[10px] font-bold text-primary uppercase mb-1 block">Product</span>
+<h3 class="font-bold text-slate-900 dark:text-slate-100 group-hover:underline decoration-primary underline-offset-4">Introducing Ostrich SDK v2.0</h3>
+<p class="text-xs text-slate-500 mt-1">3 min read</p>
+</div>
+</div>
+</div>
+<!-- Newsletter Sidebar Widget -->
+<div class="mt-12 bg-primary/5 dark:bg-primary/10 border border-primary/20 rounded-xl p-8 relative overflow-hidden">
+<div class="absolute -right-4 -top-4 opacity-10">
+<span class="material-symbols-outlined text-8xl text-primary">mail</span>
+</div>
+<h3 class="text-xl font-black mb-2 text-slate-900 dark:text-white">Stay ahead.</h3>
+<p class="text-sm text-slate-600 dark:text-slate-400 mb-6">Get AI insights delivered straight to your inbox weekly.</p>
+<form class="space-y-3">
+<input class="w-full bg-white dark:bg-slate-900 border-primary/20 rounded-lg text-sm px-4 py-3 focus:ring-primary focus:border-primary" placeholder="email@company.com" type="email"/>
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3 rounded-lg text-sm transition-all shadow-lg shadow-primary/25">
+                            Subscribe Now
+                        </button>
+</form>
+</div>
+</div>
+</div>
+<!-- Category Grid Section -->
+<div class="border-t border-slate-200 dark:border-primary/10 pt-16">
+<div class="flex items-center justify-between mb-10">
+<div class="flex items-center gap-8">
+<h2 class="text-3xl font-black text-slate-900 dark:text-white">Latest Insights</h2>
+<nav class="hidden md:flex gap-6 text-sm font-bold text-slate-400">
+<button class="text-primary border-b-2 border-primary pb-1">All</button>
+<button class="hover:text-primary transition-colors">AI Research</button>
+<button class="hover:text-primary transition-colors">Product</button>
+<button class="hover:text-primary transition-colors">Engineering</button>
+</nav>
+</div>
+<a class="flex items-center gap-2 text-sm font-bold text-primary hover:gap-3 transition-all" href="#">
+                    View all posts <span class="material-symbols-outlined text-base">arrow_forward</span>
+</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
+<!-- Blog Card 1 -->
+<article class="group">
+<div class="relative rounded-xl overflow-hidden aspect-video mb-5">
+<div class="w-full h-full bg-slate-300 dark:bg-slate-800 transition-transform duration-500 group-hover:scale-105" data-alt="Digital representation of complex data structures" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCzPsJgeluNW4w--JOnVpgBul-8pbbWDf-1X-fa_SjbycW-ufxrzHlCkn--mwJeRrQL_Mbo5nf4J87NfYgR-EYTm5MgpkzvfRnSh_It5RVEqR9-OQCONs8xoTYPuZsKtNJhsUqjCYUk8AStA0_0IktKQKs9kAFyzHtdY5fvl_31k-pqr0mWK0oUOiTwndz10l2e4sFOCdlq5AKHXoHyLTg2YF43jlts1syeN6PbiyIDkl5xOwMHWLGLvZnwJHrodX-dSJBsW4ZIPR0'); background-size: cover; background-position: center;"></div>
+<div class="absolute bottom-3 left-3 flex gap-2">
+<span class="bg-black/60 backdrop-blur-md text-white text-[9px] font-black px-2 py-1 rounded">RESEARCH</span>
+</div>
+</div>
+<div class="flex items-center gap-2 text-xs text-slate-500 font-bold mb-2 uppercase tracking-wide">
+<span>Oct 18</span>
+<span class="w-1 h-1 rounded-full bg-slate-400"></span>
+<span>5 min read</span>
+</div>
+<h3 class="text-xl font-bold text-slate-900 dark:text-white leading-snug mb-3 group-hover:text-primary transition-colors">
+                        Zero-Shot Learning: Expanding the Horizons of Ostrich Pro
+                    </h3>
+<p class="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
+                        How our team achieved state-of-the-art results without task-specific training data.
+                    </p>
+</article>
+<!-- Blog Card 2 -->
+<article class="group">
+<div class="relative rounded-xl overflow-hidden aspect-video mb-5">
+<div class="w-full h-full bg-slate-300 dark:bg-slate-800 transition-transform duration-500 group-hover:scale-105" data-alt="Modern server room with glowing blue lights" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCHSKomaJerYe_tCnurTxI3OWv_VhQvCvFp4V4TQvoQ57m6S-1JUwXFK0dJvREN1O_7xyq2vTOuJLE2ysGY9Z4Y58lv7rDXh74JnbiJaWrXIuzj93keiSAzUqSwRTsxQ9dyT60OEIWSaeoO3nI7nfLapst_RFe5L96dxlCMz6nyZmOyiLNLoHskd6mdsW2doVgJjBLqk7roOBRVHql8Ys-d0_5kjXmUoWfvqWsulVJp9cii0fQMYlyzOUjkK4KXPK_zM7HFLRRf3Tk'); background-size: cover; background-position: center;"></div>
+<div class="absolute bottom-3 left-3 flex gap-2">
+<span class="bg-black/60 backdrop-blur-md text-white text-[9px] font-black px-2 py-1 rounded">ENGINEERING</span>
+</div>
+</div>
+<div class="flex items-center gap-2 text-xs text-slate-500 font-bold mb-2 uppercase tracking-wide">
+<span>Oct 15</span>
+<span class="w-1 h-1 rounded-full bg-slate-400"></span>
+<span>7 min read</span>
+</div>
+<h3 class="text-xl font-bold text-slate-900 dark:text-white leading-snug mb-3 group-hover:text-primary transition-colors">
+                        Scaling Vector Databases for Billion-Scale Queries
+                    </h3>
+<p class="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
+                        Technical challenges and solutions in managing high-dimensional data at massive scale.
+                    </p>
+</article>
+<!-- Blog Card 3 -->
+<article class="group">
+<div class="relative rounded-xl overflow-hidden aspect-video mb-5">
+<div class="w-full h-full bg-slate-300 dark:bg-slate-800 transition-transform duration-500 group-hover:scale-105" data-alt="Microchip circuit board close up" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB1sCkMYs7r8GLR5bGbD9Ar9YLjfU5QfdVzZUTp7GXiaXlPT48f_0A-nOLa_-df9M_fInlsID433q4rkHnZQIDXExmnfI155tzB4UwLlm2__PFyaIdOGoMsG9DBPRDIGnyzXDUaalkDNLZ7-nHNT6D8GDDpRYwOu2SMPUF5dbSGV1SKtH8Esr4u0Xbwe_0QZVaZQMC3QbVk0Y0WviSKV7EBlbMdyh5xChpZz6nOkzIziSG3x3wlTNmPywDajheNm2KW-vhYrCAEKmo'); background-size: cover; background-position: center;"></div>
+<div class="absolute bottom-3 left-3 flex gap-2">
+<span class="bg-black/60 backdrop-blur-md text-white text-[9px] font-black px-2 py-1 rounded">PRODUCT</span>
+</div>
+</div>
+<div class="flex items-center gap-2 text-xs text-slate-500 font-bold mb-2 uppercase tracking-wide">
+<span>Oct 12</span>
+<span class="w-1 h-1 rounded-full bg-slate-400"></span>
+<span>4 min read</span>
+</div>
+<h3 class="text-xl font-bold text-slate-900 dark:text-white leading-snug mb-3 group-hover:text-primary transition-colors">
+                        Hardware Acceleration: Why Ostrich AI Runs Faster
+                    </h3>
+<p class="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
+                        Exploring our strategic partnership with silicon providers for custom inference kernels.
+                    </p>
+</article>
+<!-- Blog Card 4 -->
+<article class="group">
+<div class="relative rounded-xl overflow-hidden aspect-video mb-5">
+<div class="w-full h-full bg-slate-300 dark:bg-slate-800 transition-transform duration-500 group-hover:scale-105" data-alt="Code on a computer monitor screen" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDjsx7AQQRVqiXLvjj4WkpHY06OIN6onOz_1QinJ5KpExPs_y4tUY_h4AqTYcFSnsRDCQMqhE3pzhTDHLqzH-3QsiFkebLP-4f6A9nwNTrzcD2nWotS1tPBFMyYOd-1P7Evm5EMTNspT-h_PnsYYNV5Mk-0JTSPjbRhMeAqIkr4Gne-qSV5pvmWNWyXG9faKRaVwqkQr1e2A_J9l3YvhOZFSUUss2ydpmP51cGJ-9hR9L-TC5FTAbq82gl0ShXOC3XEbSjR1bW2img'); background-size: cover; background-position: center;"></div>
+<div class="absolute bottom-3 left-3 flex gap-2">
+<span class="bg-black/60 backdrop-blur-md text-white text-[9px] font-black px-2 py-1 rounded">TUTORIAL</span>
+</div>
+</div>
+<div class="flex items-center gap-2 text-xs text-slate-500 font-bold mb-2 uppercase tracking-wide">
+<span>Oct 08</span>
+<span class="w-1 h-1 rounded-full bg-slate-400"></span>
+<span>15 min read</span>
+</div>
+<h3 class="text-xl font-bold text-slate-900 dark:text-white leading-snug mb-3 group-hover:text-primary transition-colors">
+                        Building your first Custom Agent with Ostrich
+                    </h3>
+<p class="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
+                        A step-by-step developer guide to deploying autonomous AI agents in your workflow.
+                    </p>
+</article>
+<!-- Blog Card 5 -->
+<article class="group">
+<div class="relative rounded-xl overflow-hidden aspect-video mb-5">
+<div class="w-full h-full bg-slate-300 dark:bg-slate-800 transition-transform duration-500 group-hover:scale-105" data-alt="Industrial robot arm in a laboratory" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDM-gPa4m5qXcNcDSGmz6hLIgLKjPbCWHonwNNHsF3YXmqBtuDvEgyoDJc2iMSUTtwtzhnIt-7D9W84dCQyAChAtol-ucA-n-7mDSdaYuI1VxGoWzsbqopa7ub9MXcrvxz4RxD-8MGaSBYA4fJyN9utxu16aQxylyyiTrFb6wfDWjpRWNqjCc5kZHHgI0Ei1dG03GxeDKIhfdWC1TsUjC2gpFt8vMSFibNdgvY12-aNpaOdLkGzg80u_Evuhkrfog0PjvpIKhO__zI'); background-size: cover; background-position: center;"></div>
+<div class="absolute bottom-3 left-3 flex gap-2">
+<span class="bg-black/60 backdrop-blur-md text-white text-[9px] font-black px-2 py-1 rounded">CASE STUDY</span>
+</div>
+</div>
+<div class="flex items-center gap-2 text-xs text-slate-500 font-bold mb-2 uppercase tracking-wide">
+<span>Oct 05</span>
+<span class="w-1 h-1 rounded-full bg-slate-400"></span>
+<span>9 min read</span>
+</div>
+<h3 class="text-xl font-bold text-slate-900 dark:text-white leading-snug mb-3 group-hover:text-primary transition-colors">
+                        Automating Quality Control in Manufacturing
+                    </h3>
+<p class="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
+                        How visual models are transforming precision engineering assembly lines.
+                    </p>
+</article>
+<!-- Blog Card 6 -->
+<article class="group">
+<div class="relative rounded-xl overflow-hidden aspect-video mb-5">
+<div class="w-full h-full bg-slate-300 dark:bg-slate-800 transition-transform duration-500 group-hover:scale-105" data-alt="Abstract code and data lines animation" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDN7sX82Lkb1SVHoxfycGSjRDHx2PPpeuKlZZdsUFrticGwLczjqcK84GbKAOz6UOheOIVMCO7u681eClny0JlP7v-_gSwy_HxcX3zHpbdg2vpljM1qfRKrCzrvuGHAr8dsBwEor-QJcdvIjMw_WRZaAog_H8kHqZcaR8HGYbNfmsftxKM1Nvukv2dOrXGzAL6oJLqrxwikruzFlRlwxGFX1jlygmDPH_l6YEZU9yRQI94J3ej275o1fnj98PYiGG9GxmTJjiREXyI'); background-size: cover; background-position: center;"></div>
+<div class="absolute bottom-3 left-3 flex gap-2">
+<span class="bg-black/60 backdrop-blur-md text-white text-[9px] font-black px-2 py-1 rounded">NEWS</span>
+</div>
+</div>
+<div class="flex items-center gap-2 text-xs text-slate-500 font-bold mb-2 uppercase tracking-wide">
+<span>Oct 01</span>
+<span class="w-1 h-1 rounded-full bg-slate-400"></span>
+<span>3 min read</span>
+</div>
+<h3 class="text-xl font-bold text-slate-900 dark:text-white leading-snug mb-3 group-hover:text-primary transition-colors">
+                        Ostrich AI Joins Global Open Source Initiative
+                    </h3>
+<p class="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
+                        Contributing to standardized benchmarks for large language model safety.
+                    </p>
+</article>
+</div>
+<!-- Load More Button -->
+<div class="mt-20 flex flex-col items-center">
+<button class="flex items-center gap-2 px-8 py-4 border-2 border-primary text-primary hover:bg-primary hover:text-white font-black uppercase tracking-widest text-sm rounded-lg transition-all transform active:scale-95">
+                    Load More Articles
+                    <span class="material-symbols-outlined">expand_more</span>
+</button>
+<div class="mt-16 w-full flex flex-wrap gap-2 justify-center pb-20">
+<span class="text-slate-500 text-xs font-bold uppercase tracking-widest w-full text-center mb-4">Popular Topics</span>
+<a class="px-4 py-2 bg-slate-200 dark:bg-primary/10 hover:bg-primary/20 rounded-full text-xs font-bold transition-colors" href="#">Neural Architecture</a>
+<a class="px-4 py-2 bg-slate-200 dark:bg-primary/10 hover:bg-primary/20 rounded-full text-xs font-bold transition-colors" href="#">DevOps</a>
+<a class="px-4 py-2 bg-slate-200 dark:bg-primary/10 hover:bg-primary/20 rounded-full text-xs font-bold transition-colors" href="#">Data Privacy</a>
+<a class="px-4 py-2 bg-slate-200 dark:bg-primary/10 hover:bg-primary/20 rounded-full text-xs font-bold transition-colors" href="#">NLP</a>
+<a class="px-4 py-2 bg-slate-200 dark:bg-primary/10 hover:bg-primary/20 rounded-full text-xs font-bold transition-colors" href="#">Open Source</a>
+<a class="px-4 py-2 bg-slate-200 dark:bg-primary/10 hover:bg-primary/20 rounded-full text-xs font-bold transition-colors" href="#">Python SDK</a>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-slate-200 dark:bg-slate-900/50 border-t border-slate-300 dark:border-primary/10 py-12">
+<div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
+<div class="flex items-center gap-3">
+<div class="bg-slate-800 dark:bg-primary p-1 rounded">
+<svg class="w-5 h-5 text-white" fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M24 45.8096C19.6865 45.8096 15.4698 44.5305 11.8832 42.134C8.29667 39.7376 5.50128 36.3314 3.85056 32.3462C2.19985 28.361 1.76794 23.9758 2.60947 19.7452C3.451 15.5145 5.52816 11.6284 8.57829 8.5783C11.6284 5.52817 15.5145 3.45101 19.7452 2.60948C23.9758 1.76795 28.361 2.19986 32.3462 3.85057C36.3314 5.50129 39.7376 8.29668 42.134 11.8833C44.5305 15.4698 45.8096 19.6865 45.8096 24L24 24L24 45.8096Z" fill="currentColor"></path>
+</svg>
+</div>
+<span class="font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">Ostrich AI</span>
+</div>
+<div class="flex gap-8 text-sm font-semibold text-slate-500">
+<a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="hover:text-primary transition-colors" href="#">Contact</a>
+</div>
+<div class="flex gap-4">
+<a class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-300 dark:bg-primary/10 text-slate-600 dark:text-slate-400 hover:bg-primary hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined text-lg">share</span>
+</a>
+<a class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-300 dark:bg-primary/10 text-slate-600 dark:text-slate-400 hover:bg-primary hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined text-lg">rss_feed</span>
+</a>
+</div>
+</div>
+</footer>
+</body></html>

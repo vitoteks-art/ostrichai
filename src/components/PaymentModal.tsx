@@ -514,20 +514,18 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
                 }
               );
 
-              // Add credits to user account
+              // Add credits to user account (FastAPI)
               const addCredits = async () => {
                 try {
-                  const { supabase } = await import('../lib/supabase');
-                  const result = await supabase.rpc('purchase_overage_credits', {
-                    p_user_id: user.id,
-                    p_credits_to_purchase: creditAmount,
-                    p_payment_provider: provider,
-                    p_provider_reference: txRef,
-                    p_amount_cents: Math.round(totalCost * 100),
-                    p_currency: 'USD'
+                  const result = await SubscriptionService.purchaseCredits({
+                    creditsToPurchase: creditAmount,
+                    paymentProvider: provider,
+                    providerReference: txRef,
+                    amountCents: Math.round(totalCost * 100),
+                    currency: 'USD'
                   });
 
-                  if (result.error) {
+                  if (!result.success) {
                     console.error('Failed to add credits:', result.error);
                     toast.error('Credits purchase successful but failed to add credits. Please contact support.');
                   } else {

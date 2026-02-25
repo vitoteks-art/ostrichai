@@ -373,10 +373,49 @@ export class SubscriptionService {
    */
   static async getPendingSubscriptions(): Promise<{ success: boolean; data?: UserSubscription[]; error?: string }> {
     try {
-      const response = await apiClient.request('/subscriptions/pending-approval');
+      const response = await apiClient.request('/admin/subscriptions?skip=0&limit=100&status=pending_approval');
       return { success: true, data: response };
     } catch (error: any) {
       console.error('Error fetching pending subscriptions:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Admin: Get expired subscriptions
+   */
+  static async getExpiredSubscriptions(): Promise<{ success: boolean; data?: UserSubscription[]; error?: string }> {
+    try {
+      const response = await apiClient.request('/admin/subscriptions?skip=0&limit=100&status=expired');
+      return { success: true, data: response };
+    } catch (error: any) {
+      console.error('Error fetching expired subscriptions:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Admin: Get plans (admin view) — currently same as public plans
+   */
+  static async getAdminPlans(): Promise<{ success: boolean; data?: SubscriptionPlan[]; error?: string }> {
+    return this.getPlans();
+  }
+
+  /**
+   * Admin: Update a plan — backend endpoint not implemented yet
+   */
+  static async updatePlan(
+    planId: string,
+    updates: { polar_product_price_id?: string; polar_checkout_url?: string; active?: boolean }
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      await apiClient.request(`/admin/plans/${planId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates)
+      });
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error updating plan:', error);
       return { success: false, error: error.message };
     }
   }
@@ -486,6 +525,58 @@ export class SubscriptionService {
       return { success: true };
     } catch (error: any) {
       console.error('Error assigning subscription:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Admin: Extend a subscription
+   */
+  static async extendSubscription(
+    subscriptionId: string,
+    adminId: string,
+    days: number,
+    reason?: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      await apiClient.request(`/admin/subscriptions/${subscriptionId}/extend`, {
+        method: 'POST',
+        body: JSON.stringify({
+          days,
+          reason
+        })
+      });
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error extending subscription:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Purchase / top-up credits
+   */
+  static async purchaseCredits(params: {
+    creditsToPurchase: number;
+    paymentProvider: 'flutterwave' | 'paystack' | 'polar';
+    providerReference: string;
+    amountCents: number;
+    currency?: string;
+  }): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      const response = await apiClient.request('/subscriptions/purchase-credits', {
+        method: 'POST',
+        body: JSON.stringify({
+          credits_to_purchase: params.creditsToPurchase,
+          payment_provider: params.paymentProvider,
+          provider_reference: params.providerReference,
+          amount_cents: params.amountCents,
+          currency: params.currency || 'USD'
+        })
+      });
+      return { success: true, data: response };
+    } catch (error: any) {
+      console.error('Error purchasing credits:', error);
       return { success: false, error: error.message };
     }
   }

@@ -9,7 +9,6 @@ class Settings(BaseSettings):
 
     # JWT
     secret_key: str = "your-secret-key-here"  # Default fallback
-    supabase_jwt_secret: str = "" # Add explicitly to read from env
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
@@ -73,9 +72,6 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     smtp_from_email: str = "noreply@getostrichai.com" # Default sender
 
-    # Supabase
-    vite_supabase_url: str = ""
-    vite_supabase_anon_key: str = ""
     vite_app_url: str = Field("", validation_alias=AliasChoices("VITE_APP_URL", "APP_URL"))
 
     # Google OAuth

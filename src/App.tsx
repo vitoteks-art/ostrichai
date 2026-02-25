@@ -49,7 +49,6 @@ import Projects from "./pages/Projects";
 import ProjectView from "./pages/ProjectView";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import GoogleMapsScraping from "./pages/GoogleMapsScraping";
-import EmailSettings from "./pages/EmailSettings";
 import GoogleOAuthSettings from "./pages/GoogleOAuthSettings";
 import ServicesRequest from "./pages/ServicesRequest";
 import Industries from "./pages/Industries";
@@ -258,13 +257,7 @@ const App = () => (
                       <ProtectedRoute>
                         <GoogleMapsScraping />
                       </ProtectedRoute>
-                    } />
-                    <Route path="/email-settings" element={
-                      <ProtectedRoute>
-                        <EmailSettings />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/oauth-settings" element={
+                    } />                    <Route path="/oauth-settings" element={
                       <ProtectedRoute>
                         <GoogleOAuthSettings />
                       </ProtectedRoute>

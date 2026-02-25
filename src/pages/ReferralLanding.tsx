@@ -12,9 +12,8 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { ReferralService } from '@/services/referralService';
 import SEO from '@/components/SEO';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { API_BASE_URL } from '@/lib/api';
+import { API_BASE_URL, apiClient } from '@/lib/api';
 
 const ReferralLanding = () => {
   const { campaignId, referralCode } = useParams<{ campaignId: string; referralCode: string }>();
@@ -159,23 +158,12 @@ const ReferralLanding = () => {
       // Handle signup flow if needed
       if (landingConfig?.form_type === 'signup' && !submissionResult.isDuplicate) {
         try {
-          // Handle user registration
-          const { data, error } = await supabase.auth.signUp({
-            email: formData.email,
-            password: 'temp_password_' + Date.now(), // Generate temporary password
-            options: {
-              data: {
-                full_name: formData.full_name,
-                referral_campaign: campaignId,
-                referral_code: referralCode
-              }
-            }
-          });
-
-          if (error) throw error;
+          // Handle user registration (FastAPI)
+          const tempPassword = 'temp_password_' + Date.now();
+          const created = await apiClient.register(formData.email, tempPassword, formData.full_name);
 
           // Record the conversion
-          await ReferralService.recordConversion(referralCode || '', data.user?.id || '', {
+          await ReferralService.recordConversion(referralCode || '', created.id || '', {
             type: 'signup',
             metadata: {
               form_data: formData,
@@ -185,13 +173,13 @@ const ReferralLanding = () => {
           });
 
           // Generate referral link for the new user
-          const linkResult = await ReferralService.getOrCreateReferralLink(data.user?.id || '', campaignId || '');
+          const linkResult = await ReferralService.getOrCreateReferralLink(created.id || '', campaignId || '');
           if (linkResult.success) {
             setGeneratedReferralLink(linkResult.data?.full_url || '');
           }
 
           // Get user points
-          const pointsResult = await ReferralService.getUserReferralStats(data.user?.id || '');
+          const pointsResult = await ReferralService.getUserReferralStats(created.id || '');
           if (pointsResult.success) {
             setUserPoints(pointsResult.data);
           }

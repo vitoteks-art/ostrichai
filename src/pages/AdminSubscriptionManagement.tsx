@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { SubscriptionService, UserSubscription, SubscriptionPlan } from '@/services/subscriptionService';
-import { supabase } from '@/lib/supabase';
+import { apiClient } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -82,7 +82,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
-import { API_BASE_URL } from '@/lib/api';
 
 const AdminSubscriptionManagement = () => {
   const { user } = useAuth();
@@ -276,15 +275,11 @@ const AdminSubscriptionManagement = () => {
 
     setActionLoading('assign-subscription');
     try {
-      // In a real app, you'd find user by email via API
-      // For now, we'll use a fetch to admin users or search
-      const response = await fetch(`${API_BASE_URL}/admin/users?limit=1&search=${selectedUserForAssignment}`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
-      });
-      const users = await response.json();
-      const userData = users[0];
+      // Find user by email (FastAPI admin endpoint)
+      const users = await apiClient.request('/admin/users?skip=0&limit=500');
+      const userData = (users || []).find((u: any) => (u.email || '').toLowerCase() === selectedUserForAssignment.toLowerCase());
 
-      if (!userData || userData.email !== selectedUserForAssignment) {
+      if (!userData?.id) {
         toast.error('User not found');
         return;
       }
@@ -333,14 +328,11 @@ const AdminSubscriptionManagement = () => {
 
       setActionLoading('extend-selected-user');
       try {
-        // In a real app, you'd find user by email via API
-        const response = await fetch(`${API_BASE_URL}/admin/users?limit=1&search=${selectedUserForAssignment}`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
-        });
-        const users = await response.json();
-        const userData = users[0];
+        // Find user by email (FastAPI admin endpoint)
+        const users = await apiClient.request('/admin/users?skip=0&limit=500');
+        const userData = (users || []).find((u: any) => (u.email || '').toLowerCase() === selectedUserForAssignment.toLowerCase());
 
-        if (!userData || userData.email !== selectedUserForAssignment) {
+        if (!userData?.id) {
           toast.error('User not found');
           return;
         }

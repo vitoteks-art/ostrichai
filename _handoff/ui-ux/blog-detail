@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Scaling Large Language Models: The Ostrich Approach | Ostrich AI Blog</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#5044ee",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#121022",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .prose h2 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-top: 2.5rem;
+            margin-bottom: 1.25rem;
+            color: #f1f5f9;
+        }
+        .prose p {
+            margin-bottom: 1.5rem;
+            line-height: 1.75;
+            color: #cbd5e1;
+        }
+        .prose code {
+            background-color: rgba(80, 68, 238, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-family: monospace;
+            color: #a5b4fc;
+        }
+        .sticky-sidebar {
+            position: sticky;
+            top: 6rem;
+            height: fit-content;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 transition-colors duration-300">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex items-center justify-between h-16">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3">
+<div class="bg-primary p-1.5 rounded-lg text-white">
+<span class="material-symbols-outlined block">bubble_chart</span>
+</div>
+<h2 class="text-xl font-bold tracking-tight">Ostrich AI</h2>
+</div>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors" href="#">Solutions</a>
+<a class="text-sm font-medium text-primary border-b-2 border-primary pb-0.5" href="#">Research</a>
+<a class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors" href="#">Blog</a>
+<a class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors" href="#">Pricing</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+<input class="pl-9 pr-4 py-1.5 bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary w-64" placeholder="Search research..." type="text"/>
+</div>
+<button class="bg-primary hover:bg-primary/90 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-all">Sign Up</button>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<!-- Breadcrumbs -->
+<nav class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-8">
+<a class="hover:text-primary transition-colors" href="#">Home</a>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">Blog</a>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="text-slate-900 dark:text-slate-100 font-medium">AI Research</span>
+</nav>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+<!-- Left Sidebar: Table of Contents -->
+<aside class="hidden lg:block lg:col-span-3">
+<div class="sticky-sidebar">
+<h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4 px-3">Table of Contents</h3>
+<nav class="space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary border-l-4 border-primary font-medium transition-all" href="#introduction">
+<span class="material-symbols-outlined text-[20px]">info</span>
+                            Introduction
+                        </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" href="#methodology">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+                            Methodology
+                        </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" href="#benchmarks">
+<span class="material-symbols-outlined text-[20px]">query_stats</span>
+                            Performance Benchmarks
+                        </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" href="#implementation">
+<span class="material-symbols-outlined text-[20px]">terminal</span>
+                            Technical Snippet
+                        </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" href="#conclusion">
+<span class="material-symbols-outlined text-[20px]">flag</span>
+                            Conclusion
+                        </a>
+</nav>
+<div class="mt-12 p-6 rounded-xl bg-gradient-to-br from-primary/20 to-transparent border border-primary/20">
+<p class="text-sm font-bold text-slate-900 dark:text-slate-100 mb-2">Want the whitepaper?</p>
+<p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Get the full PDF technical specifications for Ostrich v4.</p>
+<button class="w-full py-2 bg-primary text-white text-xs font-bold rounded-lg flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">download</span>
+                            Download PDF
+                        </button>
+</div>
+</div>
+</aside>
+<!-- Main Content Column -->
+<article class="lg:col-span-6">
+<header class="mb-10">
+<h1 class="text-4xl md:text-5xl font-black leading-tight tracking-tight text-slate-900 dark:text-slate-100 mb-6">
+                        Scaling Large Language Models: The Ostrich Approach
+                    </h1>
+<div class="flex items-center gap-4 py-6 border-y border-slate-200 dark:border-slate-800">
+<img alt="Dr. Jane Doe Profile" class="w-12 h-12 rounded-full object-cover ring-2 ring-primary/20" data-alt="Professional headshot of a female scientist" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3Jw47cbRxhdyQbwJAHINkI75TT5Bm2R-6Zv81ffkdqxuNU9D3FLKsN4p4DqcXGfriivQDeoqowz0laKlXyQ4RFda1EMTTgUDqhroob2reybyODJi3R3QO6tcJ7pV7GVqz7WHTcbIWk2k0wKpf7WwWLYQWVvftDa85ooMIuHwoaE3TMKKGBQlddFwegDRyKUfsm3lKBhSGy7E45zPqrjxNnMopt5DXem6AvQ26H4TT_BlKHLuRIWTEUZybRzybhSs3AaMVdw0VsPo"/>
+<div>
+<p class="text-slate-900 dark:text-slate-100 font-bold">Dr. Jane Doe</p>
+<p class="text-xs text-slate-500 dark:text-slate-400">Head of AI Research • Oct 24, 2023 • 12 min read</p>
+</div>
+<div class="ml-auto flex gap-2">
+<button class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"><span class="material-symbols-outlined text-[20px]">share</span></button>
+<button class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"><span class="material-symbols-outlined text-[20px]">bookmark</span></button>
+</div>
+</div>
+</header>
+<div class="mb-10 rounded-2xl overflow-hidden aspect-video bg-slate-800">
+<img alt="Abstract AI Visualization" class="w-full h-full object-cover" data-alt="Glowing neural network abstract blue digital visualization" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDMHiaksmBqmj187uqNFKTCVD0eeRd-w59aoupo0jPk8OJd8ihWHPm2lTWA_NU9h7UjY8yO8X30sw_R8vfv2NPS-wQM-FRG8yV3XT1O1gJWQfowIfgp6YoTG4_-EaYXAo8UgBwDzfh8ZKEt91bVJOwDmAGkLZV5cRE5UTHg0eUOo9R42prhLpoqGWc_UeQJJG09fUlupGZqtOJBw6QES81r9r0w6twKbQEH9ntRXJS1GUWtRMmjLzXRcoaV0VfDxjvt3W8D3cuYshk"/>
+</div>
+<div class="prose prose-slate dark:prose-invert max-w-none">
+<p class="text-lg leading-relaxed text-slate-700 dark:text-slate-300" id="introduction">
+                        Scaling large language models (LLMs) remains the most significant challenge for enterprise AI integration. While model size often correlates with performance, the diminishing returns and astronomical compute costs require a more nuanced strategy than simply "going bigger." 
+                    </p>
+<h2 id="methodology">The Layered Efficiency Methodology</h2>
+<p>
+                        Our approach at Ostrich AI focuses on **Distributed Layer Quantization (DLQ)**. By dynamically reducing the precision of specific weights based on their impact on activation variance, we achieve a 40% reduction in memory footprint without compromising perplexity benchmarks.
+                    </p>
+<ul class="list-disc pl-6 mb-6 space-y-2 text-slate-700 dark:text-slate-300">
+<li>Recursive Weight Distillation (RWD) for zero-shot tasks.</li>
+<li>Sparse Attention Mechanics applied to context windows up to 2M tokens.</li>
+<li>Latency-optimized inference kernels for A100/H100 architectures.</li>
+</ul>
+<h2 id="benchmarks">Performance Benchmarks</h2>
+<p>
+                        In our recent testing cycles, the Ostrich-70B model demonstrated superior throughput compared to standard Llama architectures. Specifically, we observed a **3.4x improvement** in token-per-second output on edge-deployments.
+                    </p>
+<div class="my-8 overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-slate-200 dark:border-slate-800">
+<th class="py-3 px-4 font-bold text-slate-900 dark:text-slate-100">Model Architecture</th>
+<th class="py-3 px-4 font-bold text-slate-900 dark:text-slate-100">Latency (ms)</th>
+<th class="py-3 px-4 font-bold text-slate-900 dark:text-slate-100">Accuracy %</th>
+</tr>
+</thead>
+<tbody class="text-slate-600 dark:text-slate-400">
+<tr class="border-b border-slate-200 dark:border-slate-800">
+<td class="py-3 px-4">Standard Transformer</td>
+<td class="py-3 px-4">420ms</td>
+<td class="py-3 px-4">84.2%</td>
+</tr>
+<tr class="bg-primary/5">
+<td class="py-3 px-4 font-medium text-primary">Ostrich Layer-Sparsity</td>
+<td class="py-3 px-4 font-medium text-primary">124ms</td>
+<td class="py-3 px-4 font-medium text-primary">83.9%</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id="implementation">Technical Implementation</h2>
+<p>The following snippet illustrates how to initialize the Ostrich Quantization kernel within a PyTorch-based training pipeline:</p>
+<div class="my-6 rounded-xl bg-slate-950 p-5 font-mono text-sm leading-relaxed overflow-x-auto text-slate-300 border border-slate-800">
+<div class="flex gap-1.5 mb-4">
+<div class="w-3 h-3 rounded-full bg-red-500/30"></div>
+<div class="w-3 h-3 rounded-full bg-yellow-500/30"></div>
+<div class="w-3 h-3 rounded-full bg-green-500/30"></div>
+</div>
+<pre><code><span class="text-indigo-400">import</span> ostrich_ai <span class="text-indigo-400">as</span> oai
+<span class="text-indigo-400">from</span> ostrich.layers <span class="text-indigo-400">import</span> QuantizedKernel
+
+<span class="text-slate-500"># Initialize the Ostrich optimizer with 4-bit precision</span>
+model = oai.Model.from_pretrained(<span class="text-green-400">"ostrich-70b-v4"</span>)
+q_config = QuantizedKernel.Config(
+    precision=<span class="text-orange-400">4</span>,
+    dynamic_sparsity=<span class="text-orange-400">True</span>,
+    device_map=<span class="text-green-400">"auto"</span>
+)
+
+<span class="text-slate-500"># Compile with hardware acceleration</span>
+optimized_model = oai.compile(model, config=q_config)
+<span class="text-indigo-400">print</span>(f<span class="text-green-400">"Model optimized: {optimized_model.efficiency_score}"</span>)</code></pre>
+</div>
+<h2 id="conclusion">Conclusion</h2>
+<p>
+                        As we move toward AGI-tier capabilities, the focus will inevitably shift from massive hardware clusters to algorithmic elegance. Ostrich AI is committed to leading this charge, ensuring that the next generation of intelligence is as efficient as it is powerful.
+                    </p>
+</div>
+<!-- About the Author -->
+<section class="mt-16 p-8 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+<div class="flex flex-col md:flex-row gap-6">
+<img alt="Dr. Jane Doe" class="w-20 h-20 rounded-xl object-cover" data-alt="Close up of a professional researcher smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCiM2OBj739y61LK_lHLTq9Eky9aUXBuEmoXoGHH55a41_cY4YebLcyGOe2fP5QVYxQQRy5jxEnkssidKuxVxVuHcOpBnnSvTmQmxsyl5WEcWFGOKzXkTyihaAmCPSB8Rm2InGgCVVPFCB1Bxhg-WREK_jI4Z0Gabl7H3tqjsaPARHc4jC0al1NN2iNjV7KKEQF_AeJ2w2Ci1155dHB23SXmWS1WJIvFGrWEMIQoLwdFxS9wYxKu11riC404QLHCTD7ZvIHzRW1xiI"/>
+<div>
+<h4 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">About Dr. Jane Doe</h4>
+<p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-4">
+                                Jane is the Lead Research Scientist at Ostrich AI, specializing in neural network architecture and transformer efficiency. Previously, she led the NLP team at the Silicon Valley AI Labs and holds a PhD in Computer Science from MIT.
+                            </p>
+<div class="flex gap-4">
+<a class="text-primary hover:underline text-xs font-bold uppercase tracking-wider" href="#">Twitter</a>
+<a class="text-primary hover:underline text-xs font-bold uppercase tracking-wider" href="#">LinkedIn</a>
+<a class="text-primary hover:underline text-xs font-bold uppercase tracking-wider" href="#">ResearchGate</a>
+</div>
+</div>
+</div>
+</section>
+<!-- Newsletter CTA -->
+<section class="mt-12 p-10 rounded-2xl bg-primary text-white text-center">
+<h3 class="text-2xl font-black mb-2">Join the Research Community</h3>
+<p class="text-primary/10 mb-8 opacity-80 max-w-md mx-auto text-slate-100">Get bi-weekly technical deep dives on AI architecture and performance optimizations delivered to your inbox.</p>
+<form class="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
+<input class="flex-1 bg-white/10 border-white/20 rounded-lg py-3 px-4 text-white placeholder:text-white/50 focus:ring-2 focus:ring-white" placeholder="enter your email" type="email"/>
+<button class="bg-white text-primary font-bold px-8 py-3 rounded-lg hover:bg-slate-100 transition-colors">Subscribe</button>
+</form>
+<p class="mt-4 text-[10px] text-white/50">By subscribing, you agree to our Privacy Policy and Terms of Service.</p>
+</section>
+</article>
+<!-- Right Sidebar: Related Articles -->
+<aside class="hidden lg:block lg:col-span-3">
+<div class="sticky-sidebar space-y-8">
+<div>
+<h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-6 px-2">Related Articles</h3>
+<div class="space-y-6">
+<!-- Article Card 1 -->
+<a class="group block" href="#">
+<div class="rounded-xl overflow-hidden mb-3">
+<img alt="Related Post 1" class="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Robotic hand interacting with a digital screen" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXPGYPsSlLLjQGXfgJRKx3Ize2S8qQ3CY15Y1UZLq0DlT46snh1pCii_ERVp3I9LvMdCaVpOKiC3JkN7AgZpv9TaMq4tB64Et8EOrhu4BMDbvZtCnHgvqWtvzxYfSrraNgcmOB6pUwvzOkphJkYOx8fhKnjOE0K4Tq2VxYL20CkTbqlXAPFSpbLQtTTvLKbueciLw5vL_r2C9vly8CO9QciPKkMZQsmdD3c-0ERc9G4z1orG19r72JEXnoTbGv7baI9VdTyeqlDjU"/>
+</div>
+<span class="inline-block px-2 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold uppercase mb-2">NLP Research</span>
+<h4 class="text-sm font-bold leading-snug group-hover:text-primary transition-colors">Improving Semantic Search with Vector Embeddings</h4>
+<p class="text-xs text-slate-500 mt-2">Nov 12, 2023 • 8 min read</p>
+</a>
+<!-- Article Card 2 -->
+<a class="group block" href="#">
+<div class="rounded-xl overflow-hidden mb-3">
+<img alt="Related Post 2" class="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Digital blue circuit board lights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNAgINDIZK5dryNyuufKii6qAp4e153Qldg0i8-0XKO7WTh_7RCoAa1nTjAVGQa0Fro2TQXkWWYmTT0asobdU1oNq4gThuj18zpaMap9i9YrUz06fJMlumysBELllP3KEs472a5AHmOH-meRWTivgpYWHNP54kq-11BdLS5MqJHnMORmKxJimMHZMBdALStNKyecVgD8doACP9kYkgbGAh67YduYn7fzyEG0OggtDkXjZ5UZyCh37lj2mCX037XC6e6RIVD7xB_KY"/>
+</div>
+<span class="inline-block px-2 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold uppercase mb-2">Efficiency</span>
+<h4 class="text-sm font-bold leading-snug group-hover:text-primary transition-colors">Edge Computing: Why Smaller Models are the Future</h4>
+<p class="text-xs text-slate-500 mt-2">Oct 30, 2023 • 15 min read</p>
+</a>
+<!-- Article Card 3 -->
+<a class="group block" href="#">
+<div class="rounded-xl overflow-hidden mb-3">
+<img alt="Related Post 3" class="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Abstract 3D blocks grid representation" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoid0vFkLXle8CVJ3uiaOWb3_EbOXAUePYckqgILLvk8O5xe1bAyJPG2fLn32oBRGuQrPFbDVCtT7DAW3rEJr6kJz4WdJZYG9Zc4-nKk8ZWHfSKOYVN08kzEGeukqm-b_7Aw2ZyUrEBEFyjAPK0l7mYSdsNPMNIG_HUXKvgzowk6dFXXyWk4nEsPRiSiiJzpI7KIeLRW_ExZkkaQmsRwyPb8C9244VDtVeQ3dWVaREHHS5QXe6oWiwWbJbNZpQBAjJUla4R9pJh8Y"/>
+</div>
+<span class="inline-block px-2 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold uppercase mb-2">Tutorials</span>
+<h4 class="text-sm font-bold leading-snug group-hover:text-primary transition-colors">Deploying Ostrich v4 on AWS SageMaker</h4>
+<p class="text-xs text-slate-500 mt-2">Oct 15, 2023 • 20 min read</p>
+</a>
+</div>
+</div>
+<div class="pt-8 border-t border-slate-200 dark:border-slate-800">
+<h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-6 px-2">Share this article</h3>
+<div class="flex gap-4 px-2">
+<button class="bg-slate-200 dark:bg-slate-800 p-3 rounded-lg hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined block">send</span>
+</button>
+<button class="bg-slate-200 dark:bg-slate-800 p-3 rounded-lg hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined block">link</span>
+</button>
+<button class="bg-slate-200 dark:bg-slate-800 p-3 rounded-lg hover:bg-primary hover:text-white transition-all">
+<span class="material-symbols-outlined block">qr_code</span>
+</button>
+</div>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-slate-100 dark:bg-slate-900 py-16 mt-20 border-t border-slate-200 dark:border-slate-800">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-12">
+<div class="col-span-2">
+<div class="flex items-center gap-3 mb-6">
+<div class="bg-primary p-1 rounded-lg text-white">
+<span class="material-symbols-outlined block text-sm">bubble_chart</span>
+</div>
+<h2 class="text-xl font-bold tracking-tight">Ostrich AI</h2>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-sm max-w-xs leading-relaxed">
+                        Pioneering the next era of efficient artificial intelligence for the modern enterprise. Scale smarter, not larger.
+                    </p>
+</div>
+<div>
+<h4 class="text-slate-900 dark:text-slate-100 font-bold mb-6">Company</h4>
+<ul class="space-y-4 text-sm text-slate-500 dark:text-slate-400">
+<li><a class="hover:text-primary transition-colors" href="#">About Us</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Careers</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Press</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Contact</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-slate-900 dark:text-slate-100 font-bold mb-6">Resources</h4>
+<ul class="space-y-4 text-sm text-slate-500 dark:text-slate-400">
+<li><a class="hover:text-primary transition-colors" href="#">Documentation</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">API Reference</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Blog</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Community</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-slate-900 dark:text-slate-100 font-bold mb-6">Legal</h4>
+<ul class="space-y-4 text-sm text-slate-500 dark:text-slate-400">
+<li><a class="hover:text-primary transition-colors" href="#">Privacy Policy</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Terms of Use</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Cookie Policy</a></li>
+</ul>
+</div>
+</div>
+<div class="mt-16 pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6">
+<p class="text-xs text-slate-500 dark:text-slate-400">© 2024 Ostrich AI Research Lab. All rights reserved.</p>
+<div class="flex gap-6">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 hover:text-primary cursor-pointer transition-colors">language</span>
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 hover:text-primary cursor-pointer transition-colors">terminal</span>
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 hover:text-primary cursor-pointer transition-colors">data_object</span>
+</div>
+</div>
+</div>
+</footer>
+</body></html>

@@ -174,6 +174,67 @@ async def use_credits(
             detail=f"Error processing credit usage: {str(e)}"
         )
 
+@router.post("/purchase-credits")
+async def purchase_credits(
+    request_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Add credits to a user's subscription after payment is verified client-side.
+
+    This replaces the old Supabase RPC `purchase_overage_credits`.
+    """
+
+    credits_to_purchase = int(request_data.get("credits_to_purchase", 0) or 0)
+    provider = request_data.get("payment_provider")
+    provider_reference = request_data.get("provider_reference")
+    amount_cents = int(request_data.get("amount_cents", 0) or 0)
+    currency = request_data.get("currency") or "USD"
+
+    if credits_to_purchase <= 0:
+        raise HTTPException(status_code=400, detail="credits_to_purchase must be > 0")
+
+    # Get user's active subscription
+    subscription = db.query(UserSubscription).filter(
+        UserSubscription.user_id == current_user.id,
+        UserSubscription.status == 'active'
+    ).first()
+
+    if not subscription:
+        raise HTTPException(status_code=404, detail="No active subscription found")
+
+    try:
+        credits_before = subscription.credit_balance
+        subscription.credit_balance += credits_to_purchase
+        credits_after = subscription.credit_balance
+
+        # Record credit transaction
+        transaction = CreditTransaction(
+            user_id=current_user.id,
+            subscription_id=subscription.id,
+            transaction_type='topup',
+            credits_before=credits_before,
+            credits_after=credits_after,
+            credits_changed=credits_to_purchase,
+            feature_type='credit_purchase',
+            feature_count=1,
+            description=f"Credit purchase via {provider} ({provider_reference}) amount={amount_cents}{currency}"
+        )
+        db.add(transaction)
+
+        db.commit()
+        db.refresh(transaction)
+
+        return {
+            "success": True,
+            "new_balance": subscription.credit_balance,
+            "transaction_id": str(transaction.id)
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to purchase credits: {str(e)}")
+
+
 @router.post("")
 async def create_subscription(
     request_data: dict,

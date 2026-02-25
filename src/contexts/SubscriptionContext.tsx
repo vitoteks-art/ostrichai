@@ -3,9 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { SubscriptionService, SubscriptionPlan, UserSubscription, SubscriptionFeatures } from '../services/subscriptionService';
-import { detectNigerianUser } from '../services/paymentService';
 import { toast } from 'sonner';
-import { supabase } from '../lib/supabase';
 
 interface SubscriptionContextType {
   subscription: UserSubscription | null;
@@ -111,26 +109,25 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
     if (!user || !plan) return 0;
 
     try {
-      // Get current usage from database for current month
-      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
-      const startOfMonth = `${currentMonth}-01`;
-      const endOfMonth = `${currentMonth}-31`;
+      const usageResult = await SubscriptionService.getUsageStats(user.id);
+      if (!usageResult.success || !usageResult.data) return 0;
 
-      const { data, error } = await supabase
-        .from('user_usage')
-        .select('usage_count')
-        .eq('user_id', user.id)
-        .eq('feature_type', featureType)
-        .gte('usage_date', startOfMonth)
-        .lte('usage_date', endOfMonth);
+      // Only count usage from the current month
+      const now = new Date();
+      const month = now.getMonth();
+      const year = now.getFullYear();
 
-      if (error) {
-        console.error('Error fetching current usage:', error);
-        return 0;
-      }
+      const totalUsage = usageResult.data
+        .filter((u: any) => {
+          const createdAt = new Date(u.created_at || u.usage_date || u.createdAt || Date.now());
+          return (
+            u.feature_type === featureType &&
+            createdAt.getFullYear() === year &&
+            createdAt.getMonth() === month
+          );
+        })
+        .reduce((sum: number, record: any) => sum + (record.usage_count || 0), 0);
 
-      // Sum up all usage for this feature type in current month
-      const totalUsage = data?.reduce((sum, record) => sum + record.usage_count, 0) || 0;
       return totalUsage;
     } catch (error) {
       console.error('Error in getCurrentUsage:', error);

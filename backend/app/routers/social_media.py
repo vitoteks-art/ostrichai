@@ -299,12 +299,18 @@ async def delete_social_account(
 async def get_social_posts(
     skip: int = 0,
     limit: int = 50,
+    project_id: Optional[UUID] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    return db.query(SocialMediaPost).filter(
+    query = db.query(SocialMediaPost).filter(
         SocialMediaPost.user_id == current_user.id
-    ).order_by(SocialMediaPost.created_at.desc()).offset(skip).limit(limit).all()
+    )
+
+    if project_id is not None:
+        query = query.filter(SocialMediaPost.project_id == project_id)
+
+    return query.order_by(SocialMediaPost.created_at.desc()).offset(skip).limit(limit).all()
 
 @router.post("/posts", response_model=SocialMediaPostResponse)
 async def create_social_post_record(

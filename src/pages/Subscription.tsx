@@ -7,7 +7,7 @@ import { FeatureGate } from '@/components/FeatureGate';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { SubscriptionService, SubscriptionPlan, PaymentTransactionService, UserSubscription } from '@/services/subscriptionService';
-import { supabase } from '@/lib/supabase';
+import { apiClient } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -108,7 +108,7 @@ const Subscription = () => {
       const usageResult = await SubscriptionService.getUsageStats(user.id);
       if (usageResult.success && usageResult.data) {
         // Aggregate usage by feature type with proper mapping
-        const stats = usageResult.data.reduce((acc, record) => {
+        const stats = usageResult.data.reduce((acc, record: any) => {
           // Map feature_type to the correct field name
           let fieldName = '';
           switch (record.feature_type) {
@@ -124,7 +124,7 @@ const Subscription = () => {
             case 'title_gen': fieldName = 'titleGenUsed'; break;
             default: fieldName = `${record.feature_type}Used`;
           }
-          acc[fieldName] = (acc[fieldName] || 0) + record.usage_count;
+          acc[fieldName] = (acc[fieldName] || 0) + (record.usage_count || 0);
           return acc;
         }, {
           videosUsed: 0,
@@ -259,20 +259,17 @@ const Subscription = () => {
 
     setAdminActionLoading(true);
     try {
-      // Find user by email
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', selectedUserForAssignment)
-        .single();
+      // Find user by email (FastAPI admin endpoint)
+      const users = await apiClient.request('/admin/users?skip=0&limit=500');
+      const match = (users || []).find((u: any) => (u.email || '').toLowerCase() === selectedUserForAssignment.toLowerCase());
 
-      if (userError || !userData) {
+      if (!match?.id) {
         toast.error('User not found');
         return;
       }
 
       const result = await SubscriptionService.assignSubscriptionToUser(
-        userData.id,
+        match.id,
         assignmentPlanId,
         user.id,
         { reason: adminReason }
@@ -300,27 +297,27 @@ const Subscription = () => {
 
     setAdminActionLoading(true);
     try {
-      // Find user by email
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', selectedUserForAssignment)
-        .single();
+      // Find user by email (FastAPI admin endpoint)
+      const users = await apiClient.request('/admin/users?skip=0&limit=500');
+      const match = (users || []).find((u: any) => (u.email || '').toLowerCase() === selectedUserForAssignment.toLowerCase());
 
-      if (userError || !userData) {
+      if (!match?.id) {
         toast.error('User not found');
         return;
       }
 
-      // Get the user's subscription
-      const subscriptionResult = await SubscriptionService.getUserSubscription(userData.id);
-      if (!subscriptionResult.success || !subscriptionResult.data) {
-        toast.error('User has no active subscription');
+      // Get the user's subscription (admin view)
+      const subs = await apiClient.request('/admin/subscriptions?skip=0&limit=500');
+      const userSub = (subs || []).find((s: any) => s.user_id === match.id && s.status === 'active')
+        || (subs || []).find((s: any) => s.user_id === match.id);
+
+      if (!userSub?.id) {
+        toast.error('User has no subscription record');
         return;
       }
 
       const result = await SubscriptionService.extendSubscription(
-        subscriptionResult.data.id,
+        userSub.id,
         user.id,
         extensionDays,
         adminReason

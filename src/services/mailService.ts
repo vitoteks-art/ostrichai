@@ -30,7 +30,7 @@ export class MailService {
     const smtpPort = parseInt(import.meta.env.VITE_MAILTRAP_PORT || '587');
     const smtpUser = import.meta.env.VITE_MAILTRAP_USER;
     const smtpPass = import.meta.env.VITE_MAILTRAP_PASS;
-    const smtpFrom = import.meta.env.SUPABASE_SMTP_FROM;
+    const smtpFrom = import.meta.env.VITE_SMTP_FROM_EMAIL || import.meta.env.VITE_MAILTRAP_FROM_EMAIL;
 
     // API Configuration
     const apiToken = import.meta.env.VITE_MAILTRAP_API_TOKEN || smtpUser; // Use same token for API

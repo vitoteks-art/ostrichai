@@ -45,7 +45,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/hooks/useProjects';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
+import { apiClient } from '@/lib/api';
 import { SocialMediaAccount, getConnectedAccounts } from '@/services/socialMediaOAuthService';
 import { postToMultipleAccounts, PostContent } from '@/services/socialMediaPostingService';
 import { SubscriptionService } from '@/services/subscriptionService';
@@ -1219,14 +1219,9 @@ const SocialPostContent = ({ metadata, projectId }: { metadata: any, projectId: 
     if (!projectId) return; // Prevent fetch if no project ID
     setIsLoadingHistory(true);
     try {
-      const { data, error } = await supabase
-        .from('social_media_posts')
-        .select('*, social_media_accounts(platform, account_name)')
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setPostHistory(data || []);
+      // Backend now supports filtering posts by project_id
+      const posts = await apiClient.request(`/social/posts?skip=0&limit=100&project_id=${projectId}`);
+      setPostHistory(posts || []);
     } catch (error) {
       console.error("Error loading history:", error);
     } finally {
