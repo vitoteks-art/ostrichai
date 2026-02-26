@@ -1,4 +1,5 @@
 import uuid
+import os
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
@@ -42,9 +43,10 @@ async def upload_blog_cover(
     if not (file.content_type or "").startswith("image/"):
         raise HTTPException(status_code=400, detail="Only image uploads are allowed")
 
-    # store uploads inside backend/uploads/blog
+    # store uploads in UPLOADS_DIR/blog if set, else default to backend/app/../uploads/blog
     backend_dir = Path(__file__).resolve().parents[2].parent  # .../backend
-    uploads_dir = backend_dir / "uploads" / "blog"
+    base_uploads = Path(os.environ.get("UPLOADS_DIR", str(backend_dir / "uploads")))
+    uploads_dir = base_uploads / "blog"
     uploads_dir.mkdir(parents=True, exist_ok=True)
 
     ext = _safe_ext(file.filename or "", file.content_type)

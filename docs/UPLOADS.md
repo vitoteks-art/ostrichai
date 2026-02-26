@@ -15,8 +15,11 @@ The backend ensures these directories exist on startup.
 ## Easypanel / Docker persistence (required in production)
 Local uploads will be lost on redeploy unless you mount persistent storage.
 
-### Recommended
-Mount a volume to the container path:
+### Recommended (best practice)
+1) Set env var:
+- `UPLOADS_DIR=/app/uploads`
+
+2) Mount a Volume to the container path:
 - `/app/uploads`
 
 So:

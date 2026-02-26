@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+import os
 from app.database import engine
 from app.models import Base
 from app.routers import auth, users, subscriptions, payments, referrals, admin, projects, social_media, campaigns, social_analytics, bookings, emails, video_editor, blog, admin_blog
@@ -32,7 +33,8 @@ app = FastAPI(
 
 # Serve uploaded files (local uploads)
 # Production-safe: ensure the directory exists even on fresh deploy.
-UPLOADS_DIR = Path(__file__).resolve().parent / "uploads"
+# You can override the storage location with env var UPLOADS_DIR (recommended in Easypanel).
+UPLOADS_DIR = Path(os.environ.get("UPLOADS_DIR", str(Path(__file__).resolve().parent / "uploads")))
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 (UPLOADS_DIR / "blog").mkdir(parents=True, exist_ok=True)
 
