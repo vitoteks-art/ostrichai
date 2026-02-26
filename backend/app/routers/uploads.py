@@ -32,11 +32,7 @@ def _safe_ext(filename: str, content_type: str | None) -> str:
 MAX_IMAGE_BYTES = 5 * 1024 * 1024  # 5MB
 
 
-@router.post("/blog/cover")
-async def upload_blog_cover(
-    file: UploadFile = File(...),
-    admin: User = Depends(get_current_admin_user),
-):
+def _save_image_upload(file: UploadFile) -> str:
     if not file:
         raise HTTPException(status_code=400, detail="File is required")
 
@@ -53,7 +49,10 @@ async def upload_blog_cover(
     name = f"{uuid.uuid4().hex}{ext}"
     dest = uploads_dir / name
 
-    # Stream to disk with size limit
+    return name, dest
+
+
+async def _write_upload_to_disk(file: UploadFile, dest: Path) -> None:
     written = 0
     try:
         with dest.open("wb") as out:
@@ -68,6 +67,26 @@ async def upload_blog_cover(
     finally:
         await file.close()
 
-    # return a URL path that FastAPI serves
+
+@router.post("/blog/cover")
+async def upload_blog_cover(
+    file: UploadFile = File(...),
+    admin: User = Depends(get_current_admin_user),
+):
+    name, dest = _save_image_upload(file)
+    await _write_upload_to_disk(file, dest)
+
+    path = f"/uploads/blog/{name}"
+    return {"success": True, "path": path}
+
+
+@router.post("/blog/inline")
+async def upload_blog_inline_image(
+    file: UploadFile = File(...),
+    admin: User = Depends(get_current_admin_user),
+):
+    name, dest = _save_image_upload(file)
+    await _write_upload_to_disk(file, dest)
+
     path = f"/uploads/blog/{name}"
     return {"success": True, "path": path}

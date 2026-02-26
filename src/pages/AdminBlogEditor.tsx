@@ -100,42 +100,76 @@ const AdminBlogEditor: React.FC = () => {
     setPost(updated);
   };
 
+  const apiBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api').replace(/\/$/, '');
+  const fileBase = apiBase.replace(/\/api$/, '');
+
+  const uploadLocalImage = async (file: File, kind: 'cover' | 'inline') => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) throw new Error('Not authenticated');
+
+    const form = new FormData();
+    form.append('file', file);
+
+    const endpoint = kind === 'cover' ? '/admin/uploads/blog/cover' : '/admin/uploads/blog/inline';
+
+    const resp = await fetch(`${apiBase}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: form,
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.detail || `Upload failed (${resp.status})`);
+    }
+
+    const data = await resp.json();
+    const path = data.path as string;
+    return `${fileBase}${path}`;
+  };
+
   const uploadCoverImage = async (file: File) => {
     setCoverUploading(true);
     try {
-      // Local upload to FastAPI (admin-only)
-      const token = localStorage.getItem('auth_token');
-      if (!token) throw new Error('Not authenticated');
-
-      const form = new FormData();
-      form.append('file', file);
-
-      // VITE_API_URL is like http://host:8001/api
-      const apiBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api').replace(/\/$/, '');
-      const resp = await fetch(`${apiBase}/admin/uploads/blog/cover`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: form,
-      });
-
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({}));
-        throw new Error(err.detail || `Upload failed (${resp.status})`);
-      }
-
-      const data = await resp.json();
-      const path = data.path as string;
-
-      // Turn /uploads/... into absolute URL on same API host
-      const fileBase = apiBase.replace(/\/api$/, '');
-      const url = `${fileBase}${path}`;
-
+      const url = await uploadLocalImage(file, 'cover');
       setCoverImageUrl(url);
     } finally {
       setCoverUploading(false);
     }
+  };
+
+  const insertAtCursor = (textToInsert: string) => {
+    const el = document.getElementById('blog-content-editor') as HTMLTextAreaElement | null;
+    if (!el) {
+      // fallback append
+      setContent((prev) => prev + `\n\n${textToInsert}\n`);
+      return;
+    }
+
+    const start = el.selectionStart ?? el.value.length;
+    const end = el.selectionEnd ?? el.value.length;
+    const before = content.slice(0, start);
+    const after = content.slice(end);
+    const next = `${before}${textToInsert}${after}`;
+    setContent(next);
+
+    // restore cursor after state update
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = start + textToInsert.length;
+      el.setSelectionRange(pos, pos);
+    });
+  };
+
+  const insertInlineImage = async (file: File, caption?: string) => {
+    const url = await uploadLocalImage(file, 'inline');
+
+    // Markdown: image + optional caption (italic on next line)
+    const alt = caption?.trim() ? caption.trim() : 'Image';
+    const md = `\n\n![${alt}](${url})\n${caption?.trim() ? `\n*${caption.trim()}*\n` : ''}`;
+    insertAtCursor(md);
   };
 
   return (
@@ -177,7 +211,44 @@ const AdminBlogEditor: React.FC = () => {
                     }} placeholder="Post title" />
 
                     {mode === 'write' ? (
-                      <Textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="Write in Markdown…" className="min-h-[520px]" />
+                      <>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="text-xs text-muted-foreground">Write in Markdown</div>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => document.getElementById('inline-image-picker')?.click()}
+                            >
+                              Insert image
+                            </Button>
+                          </div>
+                        </div>
+
+                        <input
+                          id="inline-image-picker"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const inputEl = e.currentTarget;
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const caption = prompt('Optional caption for this image?') || '';
+                            await insertInlineImage(file, caption);
+                            inputEl.value = '';
+                          }}
+                        />
+
+                        <Textarea
+                          id="blog-content-editor"
+                          value={content}
+                          onChange={(e) => setContent(e.target.value)}
+                          placeholder="Write in Markdown…"
+                          className="min-h-[520px]"
+                        />
+                      </>
                     ) : (
                       <div className="prose prose-slate dark:prose-invert max-w-none border border-border/60 rounded-lg p-4">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{content || '*Nothing to preview yet.*'}</ReactMarkdown>

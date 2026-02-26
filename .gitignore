@@ -41,3 +41,7 @@ migration_data.sql
 New
 _handoff/
 backend/.venv/
+
+# Runtime uploads (local testing)
+uploads/
+backend/uploads/
