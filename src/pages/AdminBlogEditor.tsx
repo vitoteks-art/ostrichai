@@ -254,11 +254,12 @@ const AdminBlogEditor: React.FC = () => {
                         accept="image/*"
                         className="hidden"
                         onChange={async (e) => {
+                          const inputEl = e.currentTarget;
                           const file = e.target.files?.[0];
                           if (!file) return;
                           await uploadCoverImage(file);
                           // reset input so same file can be selected again
-                          e.currentTarget.value = '';
+                          if (inputEl) inputEl.value = '';
                         }}
                       />
 
