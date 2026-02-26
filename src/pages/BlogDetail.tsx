@@ -215,7 +215,7 @@ const BlogDetail: React.FC = () => {
           {/* Main Content Column */}
           <article className="lg:col-span-6">
             <header className="mb-10">
-              <h1 className="text-4xl md:text-5xl font-black leading-tight tracking-tight text-slate-900 dark:text-slate-100 mb-6">
+              <h1 className="text-4xl md:text-5xl font-black leading-tight tracking-tight text-slate-950 dark:text-slate-50 mb-6">
                 {post.title}
               </h1>
 
