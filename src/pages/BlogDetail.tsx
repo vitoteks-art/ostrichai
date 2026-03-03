@@ -234,7 +234,7 @@ const BlogDetail: React.FC = () => {
                   OA
                 </div>
                 <div>
-                  <p className="text-slate-900 dark:text-slate-100 font-bold">OstrichAI</p>
+                  <p className="text-white font-bold">OstrichAI</p>
                   <p className="text-xs text-white/85">
                     {publishedDate.toLocaleDateString()} • {readTime} min read
                   </p>
