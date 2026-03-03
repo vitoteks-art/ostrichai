@@ -187,9 +187,9 @@ const BlogDetail: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Left Sidebar: Table of Contents */}
-          <aside className="hidden lg:block lg:col-span-3">
+          <aside className="hidden lg:block lg:col-span-2">
             <div className="sticky top-24 h-fit">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4 px-3">Table of Contents</h3>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-600 dark:text-slate-200 mb-4 px-3">Table of Contents</h3>
               {toc.length === 0 ? (
                 <div className="text-xs text-muted-foreground px-3">No sections</div>
               ) : (
@@ -203,7 +203,7 @@ const BlogDetail: React.FC = () => {
                         className={
                           isActive
                             ? 'flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary border-l-4 border-primary font-medium transition-all'
-                            : 'flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all'
+                            : 'flex items-center gap-3 px-3 py-2 rounded-lg text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all'
                         }
                       >
                         <span className="inline-block size-2 rounded-full bg-primary/40" />
@@ -223,9 +223,9 @@ const BlogDetail: React.FC = () => {
           </aside>
 
           {/* Main Content Column */}
-          <article className="lg:col-span-6">
-            <header className="mb-10">
-              <h1 className="text-4xl md:text-5xl font-black leading-tight tracking-tight text-slate-950 dark:text-slate-50 mb-6">
+          <article className="lg:col-span-8">
+            <header className="mb-10 rounded-2xl bg-slate-950/30 border border-white/10 p-6">
+              <h1 className="text-4xl md:text-5xl font-black leading-tight tracking-tight text-slate-50 mb-6">
                 {post.title}
               </h1>
 
@@ -364,7 +364,7 @@ const BlogDetail: React.FC = () => {
           </article>
 
           {/* Right Sidebar: Related Articles */}
-          <aside className="hidden lg:block lg:col-span-3">
+          <aside className="hidden lg:block lg:col-span-2">
             <div className="sticky top-24 h-fit space-y-8">
               <div>
                 <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-6 px-2">Related Articles</h3>
