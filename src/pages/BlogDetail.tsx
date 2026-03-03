@@ -189,7 +189,7 @@ const BlogDetail: React.FC = () => {
           {/* Left Sidebar: Table of Contents */}
           <aside className="hidden lg:block lg:col-span-2">
             <div className="sticky top-24 h-fit">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-100 mb-4 px-3">Table of Contents</h3>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white mb-4 px-3">Table of Contents</h3>
               {toc.length === 0 ? (
                 <div className="text-xs text-muted-foreground px-3">No sections</div>
               ) : (
@@ -202,8 +202,8 @@ const BlogDetail: React.FC = () => {
                         href={`#${t.id}`}
                         className={
                           isActive
-                            ? 'flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary border-l-4 border-primary font-semibold transition-all'
-                            : 'flex items-center gap-3 px-3 py-2 rounded-lg text-slate-900 dark:text-slate-100 hover:bg-slate-100/70 dark:hover:bg-slate-800/70 transition-all'
+                            ? 'flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/15 text-white border-l-4 border-primary font-semibold transition-all'
+                            : 'flex items-center gap-3 px-3 py-2 rounded-lg text-slate-900 dark:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/70 transition-all'
                         }
                       >
                         <span className="inline-block size-2 rounded-full bg-primary/40" />
@@ -235,7 +235,7 @@ const BlogDetail: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-slate-900 dark:text-slate-100 font-bold">OstrichAI</p>
-                  <p className="text-xs text-slate-600 dark:text-slate-200">
+                  <p className="text-xs text-slate-600 dark:text-white/90">
                     {publishedDate.toLocaleDateString()} • {readTime} min read
                   </p>
                 </div>
