@@ -39,8 +39,8 @@ def _save_image_upload(file: UploadFile) -> str:
     if not (file.content_type or "").startswith("image/"):
         raise HTTPException(status_code=400, detail="Only image uploads are allowed")
 
-    # store uploads in UPLOADS_DIR/blog if set, else default to backend/app/../uploads/blog
-    backend_dir = Path(__file__).resolve().parents[2].parent  # .../backend
+    # store uploads in UPLOADS_DIR/blog if set, else default to backend/uploads/blog
+    backend_dir = Path(__file__).resolve().parents[2]  # .../backend
     base_uploads = Path(os.environ.get("UPLOADS_DIR", str(backend_dir / "uploads")))
     uploads_dir = base_uploads / "blog"
     uploads_dir.mkdir(parents=True, exist_ok=True)
