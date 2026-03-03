@@ -10,7 +10,14 @@ class BlogPostBase(BaseModel):
     title: str
     slug: str
     excerpt: Optional[str] = None
-    content_md: str
+
+    # Legacy markdown (optional; kept for backward compatibility)
+    content_md: Optional[str] = ""
+
+    # Rich editor fields (TipTap)
+    content_json: Optional[Any] = None
+    content_html: Optional[str] = None
+    toc: Optional[Any] = None
 
     category: Optional[str] = None
     tags: List[str] = []
@@ -28,7 +35,14 @@ class BlogPostUpdate(BaseModel):
     title: Optional[str] = None
     slug: Optional[str] = None
     excerpt: Optional[str] = None
+
+    # Legacy markdown
     content_md: Optional[str] = None
+
+    # Rich editor fields
+    content_json: Optional[Any] = None
+    content_html: Optional[str] = None
+    toc: Optional[Any] = None
 
     category: Optional[str] = None
     tags: Optional[List[str]] = None

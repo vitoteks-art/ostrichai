@@ -36,7 +36,11 @@ async def list_published_posts(
 
     if q:
         like = f"%{q}%"
-        query = query.filter((BlogPost.title.ilike(like)) | (BlogPost.content_md.ilike(like)))
+        query = query.filter(
+            (BlogPost.title.ilike(like))
+            | (BlogPost.content_html.ilike(like))
+            | (BlogPost.content_md.ilike(like))
+        )
 
     total = query.count()
     items = (

@@ -7,8 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Link from '@tiptap/extension-link';
+import Placeholder from '@tiptap/extension-placeholder';
+import Image from '@tiptap/extension-image';
+import { generateHTML } from '@tiptap/html';
 
 function slugify(input: string) {
   return input
@@ -19,28 +24,179 @@ function slugify(input: string) {
     .replace(/-+/g, '-');
 }
 
+type TocItem = { id: string; title: string; level: number };
+
+function getTextFromTiptapNode(node: any): string {
+  if (!node) return '';
+  if (node.type === 'text') return node.text || '';
+  const parts: string[] = [];
+  const children = node.content || [];
+  for (const c of children) parts.push(getTextFromTiptapNode(c));
+  return parts.join('');
+}
+
+function extractTocFromTiptapJson(doc: any): TocItem[] {
+  const items: TocItem[] = [];
+
+  function walk(node: any) {
+    if (!node) return;
+    if (node.type === 'heading') {
+      const level = Number(node.attrs?.level || 2);
+      const title = getTextFromTiptapNode(node).trim();
+      if (title) {
+        items.push({ id: slugify(title), title, level });
+      }
+    }
+    const children = node.content || [];
+    for (const c of children) walk(c);
+  }
+
+  walk(doc);
+
+  // de-dupe ids
+  const seen = new Map<string, number>();
+  return items.map((t) => {
+    const count = (seen.get(t.id) || 0) + 1;
+    seen.set(t.id, count);
+    return count === 1 ? t : { ...t, id: `${t.id}-${count}` };
+  });
+}
+
+function markdownToRoughTiptapDoc(md: string): any {
+  // Minimal, “good enough” converter to avoid blank editor when editing legacy markdown posts.
+  // Supports: H2/H3, bullet list, paragraphs.
+  const lines = (md || '').split('\n');
+  const content: any[] = [];
+  let currentBullet: any[] | null = null;
+
+  const flushBullets = () => {
+    if (currentBullet && currentBullet.length) {
+      content.push({
+        type: 'bulletList',
+        content: currentBullet,
+      });
+    }
+    currentBullet = null;
+  };
+
+  for (const raw of lines) {
+    const line = raw.trimEnd();
+
+    const h2 = line.match(/^##\s+(.+)$/);
+    const h3 = line.match(/^###\s+(.+)$/);
+    const bullet = line.match(/^[-*]\s+(.+)$/);
+
+    if (h2) {
+      flushBullets();
+      content.push({
+        type: 'heading',
+        attrs: { level: 2 },
+        content: [{ type: 'text', text: h2[1].trim() }],
+      });
+      continue;
+    }
+
+    if (h3) {
+      flushBullets();
+      content.push({
+        type: 'heading',
+        attrs: { level: 3 },
+        content: [{ type: 'text', text: h3[1].trim() }],
+      });
+      continue;
+    }
+
+    if (bullet) {
+      if (!currentBullet) currentBullet = [];
+      currentBullet.push({
+        type: 'listItem',
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: bullet[1].trim() }] }],
+      });
+      continue;
+    }
+
+    if (!line.trim()) {
+      flushBullets();
+      continue;
+    }
+
+    flushBullets();
+    content.push({
+      type: 'paragraph',
+      content: [{ type: 'text', text: line.trim() }],
+    });
+  }
+
+  flushBullets();
+
+  return {
+    type: 'doc',
+    content: content.length ? content : [{ type: 'paragraph' }],
+  };
+}
+
+const tiptapExtensions = [
+  StarterKit.configure({
+    heading: { levels: [2, 3] },
+  }),
+  Link.configure({
+    openOnClick: false,
+    autolink: true,
+    linkOnPaste: true,
+  }),
+  Placeholder.configure({
+    placeholder: 'Write your blog post…',
+  }),
+  Image.configure({
+    inline: false,
+    allowBase64: false,
+  }),
+];
+
 const AdminBlogEditor: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isNew = !id;
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState<'write' | 'preview'>('write');
   const [post, setPost] = useState<BlogPost | null>(null);
 
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [excerpt, setExcerpt] = useState('');
-  const [content, setContent] = useState('');
   const [category, setCategory] = useState('');
   const [tags, setTags] = useState('');
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
   const [coverImageUrl, setCoverImageUrl] = useState('');
+
   const [coverUploading, setCoverUploading] = useState(false);
   const coverFileRef = useRef<HTMLInputElement | null>(null);
 
   const tagsArr = useMemo(() => tags.split(',').map(t => t.trim()).filter(Boolean), [tags]);
+
+  const editor = useEditor({
+    extensions: tiptapExtensions,
+    content: { type: 'doc', content: [{ type: 'paragraph' }] },
+    editorProps: {
+      attributes: {
+        class:
+          'prose prose-slate dark:prose-invert max-w-none focus:outline-none min-h-[520px] px-4 py-4',
+      },
+    },
+  });
+
+  const [toc, setToc] = useState<TocItem[]>([]);
+
+  useEffect(() => {
+    if (!editor) return;
+    const update = () => setToc(extractTocFromTiptapJson(editor.getJSON()));
+    update();
+    editor.on('update', update);
+    return () => {
+      editor.off('update', update);
+    };
+  }, [editor]);
 
   const load = async () => {
     setLoading(true);
@@ -51,12 +207,17 @@ const AdminBlogEditor: React.FC = () => {
         setTitle(p.title);
         setSlug(p.slug);
         setExcerpt(p.excerpt || '');
-        setContent(p.content_md || '');
         setCategory(p.category || '');
         setTags((p.tags || []).join(', '));
         setSeoTitle(p.seo_title || '');
         setSeoDescription(p.seo_description || '');
         setCoverImageUrl(p.cover_image_url || '');
+
+        const initialDoc = p.content_json || markdownToRoughTiptapDoc(p.content_md || '');
+        editor?.commands.setContent(initialDoc, false);
+      } else {
+        // new post
+        editor?.commands.setContent({ type: 'doc', content: [{ type: 'paragraph' }] }, false);
       }
     } finally {
       setLoading(false);
@@ -64,41 +225,11 @@ const AdminBlogEditor: React.FC = () => {
   };
 
   useEffect(() => {
+    // wait for editor instance
+    if (!editor) return;
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-
-  const save = async () => {
-    const payload: any = {
-      title,
-      slug,
-      excerpt,
-      content_md: content,
-      category: category || null,
-      tags: tagsArr,
-      seo_title: seoTitle || null,
-      seo_description: seoDescription || null,
-      cover_image_url: coverImageUrl || null,
-    };
-
-    if (isNew) {
-      const created = await BlogService.adminCreatePost(payload);
-      navigate(`/admin/blog/posts/${created.id}/edit`, { replace: true });
-    } else if (id) {
-      const updated = await BlogService.adminUpdatePost(id, payload);
-      setPost(updated);
-    }
-  };
-
-  const setStatus = async (status: any) => {
-    if (isNew) {
-      await save();
-      return;
-    }
-    if (!id) return;
-    const updated = await BlogService.adminSetPostStatus(id, status);
-    setPost(updated);
-  };
+  }, [id, editor]);
 
   const apiBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api').replace(/\/$/, '');
   const fileBase = apiBase.replace(/\/api$/, '');
@@ -140,36 +271,52 @@ const AdminBlogEditor: React.FC = () => {
     }
   };
 
-  const insertAtCursor = (textToInsert: string) => {
-    const el = document.getElementById('blog-content-editor') as HTMLTextAreaElement | null;
-    if (!el) {
-      // fallback append
-      setContent((prev) => prev + `\n\n${textToInsert}\n`);
-      return;
-    }
-
-    const start = el.selectionStart ?? el.value.length;
-    const end = el.selectionEnd ?? el.value.length;
-    const before = content.slice(0, start);
-    const after = content.slice(end);
-    const next = `${before}${textToInsert}${after}`;
-    setContent(next);
-
-    // restore cursor after state update
-    requestAnimationFrame(() => {
-      el.focus();
-      const pos = start + textToInsert.length;
-      el.setSelectionRange(pos, pos);
-    });
+  const insertInlineImageAsHtml = async (file: File) => {
+    if (!editor) return;
+    const url = await uploadLocalImage(file, 'inline');
+    editor.chain().focus().setImage({ src: url, alt: 'Image' }).run();
   };
 
-  const insertInlineImage = async (file: File, caption?: string) => {
-    const url = await uploadLocalImage(file, 'inline');
+  const save = async () => {
+    if (!editor) throw new Error('Editor not ready');
 
-    // Markdown: image + optional caption (italic on next line)
-    const alt = caption?.trim() ? caption.trim() : 'Image';
-    const md = `\n\n![${alt}](${url})\n${caption?.trim() ? `\n*${caption.trim()}*\n` : ''}`;
-    insertAtCursor(md);
+    const content_json = editor.getJSON();
+    const content_html = generateHTML(content_json, tiptapExtensions);
+    const tocItems = extractTocFromTiptapJson(content_json);
+
+    const payload: any = {
+      title,
+      slug,
+      excerpt,
+      // Keep legacy field populated (empty is fine) for older UI and search fallbacks
+      content_md: post?.content_md || '',
+      content_json,
+      content_html,
+      toc: tocItems,
+      category: category || null,
+      tags: tagsArr,
+      seo_title: seoTitle || null,
+      seo_description: seoDescription || null,
+      cover_image_url: coverImageUrl || null,
+    };
+
+    if (isNew) {
+      const created = await BlogService.adminCreatePost(payload);
+      navigate(`/admin/blog/posts/${created.id}/edit`, { replace: true });
+    } else if (id) {
+      const updated = await BlogService.adminUpdatePost(id, payload);
+      setPost(updated);
+    }
+  };
+
+  const setStatus = async (status: any) => {
+    if (isNew) {
+      await save();
+      return;
+    }
+    if (!id) return;
+    const updated = await BlogService.adminSetPostStatus(id, status);
+    setPost(updated);
   };
 
   return (
@@ -183,7 +330,7 @@ const AdminBlogEditor: React.FC = () => {
             </div>
             <div className="flex gap-2 flex-wrap justify-end">
               <Button variant="outline" onClick={() => navigate('/admin/blog/posts')}>Back</Button>
-              <Button variant="outline" onClick={save} disabled={loading}>Save</Button>
+              <Button variant="outline" onClick={save} disabled={loading || !editor}>Save</Button>
               <Button variant="secondary" onClick={() => setStatus('pending')} disabled={loading}>Set Pending</Button>
               <Button variant="outline" onClick={() => setStatus('approved')} disabled={loading}>Approve</Button>
               <Button onClick={() => setStatus('published')} disabled={loading}>Publish</Button>
@@ -200,66 +347,97 @@ const AdminBlogEditor: React.FC = () => {
                   <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Editor</CardTitle>
                     <div className="flex gap-2">
-                      <Button size="sm" variant={mode === 'write' ? 'default' : 'outline'} onClick={() => setMode('write')}>Write</Button>
-                      <Button size="sm" variant={mode === 'preview' ? 'default' : 'outline'} onClick={() => setMode('preview')}>Preview</Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (!editor) return;
+                          const url = prompt('Paste link URL');
+                          if (!url) return;
+                          editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+                        }}
+                      >
+                        Link
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => editor?.chain().focus().toggleBold().run()} disabled={!editor?.can().toggleBold()}>
+                        Bold
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => editor?.chain().focus().toggleItalic().run()} disabled={!editor?.can().toggleItalic()}>
+                        Italic
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}>
+                        H2
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}>
+                        H3
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => editor?.chain().focus().toggleBulletList().run()}>
+                        Bullets
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => editor?.chain().focus().toggleOrderedList().run()}>
+                        Numbered
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => document.getElementById('inline-image-picker')?.click()}
+                      >
+                        Image
+                      </Button>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <Input value={title} onChange={(e) => {
-                      setTitle(e.target.value);
-                      if (isNew && !slug) setSlug(slugify(e.target.value));
-                    }} placeholder="Post title" />
+                    <Input
+                      value={title}
+                      onChange={(e) => {
+                        setTitle(e.target.value);
+                        if (isNew && !slug) setSlug(slugify(e.target.value));
+                      }}
+                      placeholder="Post title"
+                    />
 
-                    {mode === 'write' ? (
-                      <>
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="text-xs text-muted-foreground">Write in Markdown</div>
-                          <div className="flex gap-2">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => document.getElementById('inline-image-picker')?.click()}
-                            >
-                              Insert image
-                            </Button>
-                          </div>
-                        </div>
+                    <input
+                      id="inline-image-picker"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const inputEl = e.currentTarget;
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        await insertInlineImageAsHtml(file);
+                        inputEl.value = '';
+                      }}
+                    />
 
-                        <input
-                          id="inline-image-picker"
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={async (e) => {
-                            const inputEl = e.currentTarget;
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            const caption = prompt('Optional caption for this image?') || '';
-                            await insertInlineImage(file, caption);
-                            inputEl.value = '';
-                          }}
-                        />
-
-                        <Textarea
-                          id="blog-content-editor"
-                          value={content}
-                          onChange={(e) => setContent(e.target.value)}
-                          placeholder="Write in Markdown…"
-                          className="min-h-[520px]"
-                        />
-                      </>
-                    ) : (
-                      <div className="prose prose-slate dark:prose-invert max-w-none border border-border/60 rounded-lg p-4">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content || '*Nothing to preview yet.*'}</ReactMarkdown>
-                      </div>
-                    )}
+                    <div className="border border-border/60 rounded-lg bg-background">
+                      <EditorContent editor={editor} />
+                    </div>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Settings */}
+              {/* Settings + TOC */}
               <div className="xl:col-span-4 space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Table of Contents</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {toc.length === 0 ? (
+                      <div className="text-xs text-muted-foreground">Add H2/H3 headings to generate a TOC.</div>
+                    ) : (
+                      <div className="space-y-1">
+                        {toc.map((t) => (
+                          <div key={t.id} className={t.level === 3 ? 'pl-4 text-sm text-muted-foreground' : 'text-sm font-medium'}>
+                            {t.title}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
                 <Card>
                   <CardHeader>
                     <CardTitle>Post Settings</CardTitle>
@@ -329,7 +507,6 @@ const AdminBlogEditor: React.FC = () => {
                           const file = e.target.files?.[0];
                           if (!file) return;
                           await uploadCoverImage(file);
-                          // reset input so same file can be selected again
                           if (inputEl) inputEl.value = '';
                         }}
                       />

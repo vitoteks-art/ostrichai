@@ -13,7 +13,14 @@ class BlogPost(Base):
     title = Column(String, nullable=False)
     slug = Column(String, nullable=False, unique=True, index=True)
     excerpt = Column(Text)
-    content_md = Column(Text, nullable=False)
+
+    # Legacy markdown (kept for backward compatibility)
+    content_md = Column(Text, nullable=False, default="")
+
+    # Rich editor fields (TipTap)
+    content_json = Column(JSON)
+    content_html = Column(Text)
+    toc = Column(JSON)
 
     status = Column(String, nullable=False, default="draft", index=True)  # draft|pending|approved|published
 

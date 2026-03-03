@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-type TocItem = { id: string; title: string };
+type TocItem = { id: string; title: string; level?: number };
 
 function slugifyHeading(s: string) {
   return s
@@ -20,8 +20,13 @@ function slugifyHeading(s: string) {
     .replace(/-+/g, '-');
 }
 
-function estimateReadTimeMinutes(markdown: string) {
-  const words = (markdown || '').replace(/[#*_`>\-\[\]\(\)]/g, ' ').split(/\s+/).filter(Boolean).length;
+function stripHtml(html: string) {
+  return (html || '').replace(/<[^>]*>/g, ' ');
+}
+
+function estimateReadTimeMinutes(textOrHtml: string) {
+  const text = stripHtml(textOrHtml || '').replace(/[#*_`>\-\[\]\(\)]/g, ' ');
+  const words = text.split(/\s+/).filter(Boolean).length;
   return Math.max(1, Math.round(words / 200));
 }
 
@@ -39,11 +44,16 @@ const BlogDetail: React.FC = () => {
   const [related, setRelated] = useState<BlogPost[]>([]);
   const [activeId, setActiveId] = useState<string>('');
 
-  const readTime = useMemo(() => estimateReadTimeMinutes(post?.content_md || ''), [post?.content_md]);
+  const readTime = useMemo(() => estimateReadTimeMinutes(post?.content_html || post?.content_md || ''), [post?.content_html, post?.content_md]);
 
   const toc: TocItem[] = useMemo(() => {
+    // Prefer backend-provided TOC (TipTap editor)
+    if (post?.toc && Array.isArray(post.toc) && post.toc.length) {
+      return post.toc as any;
+    }
+
+    // Fallback: build TOC from legacy markdown H2 headings (## Heading)
     const md = post?.content_md || '';
-    // Build TOC from H2 headings (## Heading)
     const items: TocItem[] = [];
     const lines = md.split('\n');
     for (const line of lines) {
@@ -51,11 +61,11 @@ const BlogDetail: React.FC = () => {
       if (m?.[1]) {
         const title = m[1].trim();
         const id = slugifyHeading(title);
-        items.push({ id, title });
+        items.push({ id, title, level: 2 });
       }
     }
     return items;
-  }, [post?.content_md]);
+  }, [post?.toc, post?.content_md]);
 
   const load = async () => {
     if (!slug) return;
@@ -255,29 +265,36 @@ const BlogDetail: React.FC = () => {
             )}
 
             <div className="prose prose-slate dark:prose-invert max-w-none prose-h2:mt-10 prose-h2:mb-4 prose-h2:font-bold prose-h2:text-3xl prose-p:leading-relaxed">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  h2: ({ node, children, ...props }) => {
-                    const text = String(children?.[0] ?? '').trim() || 'section';
-                    const id = slugifyHeading(text);
-                    return (
-                      <h2 id={id} {...props}>
-                        {children}
-                      </h2>
-                    );
-                  },
-                  img: ({ node, ...props }) => (
-                    <img
-                      {...props}
-                      className="rounded-xl border border-primary/10 shadow-sm"
-                      loading="lazy"
-                    />
-                  ),
-                }}
-              >
-                {post.content_md}
-              </ReactMarkdown>
+              {post.content_html ? (
+                <div
+                  // content_html is sanitized server-side before being stored
+                  dangerouslySetInnerHTML={{ __html: post.content_html }}
+                />
+              ) : (
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    h2: ({ children, ...props }) => {
+                      const text = String(children?.[0] ?? '').trim() || 'section';
+                      const id = slugifyHeading(text);
+                      return (
+                        <h2 id={id} {...props}>
+                          {children}
+                        </h2>
+                      );
+                    },
+                    img: ({ ...props }) => (
+                      <img
+                        {...props}
+                        className="rounded-xl border border-primary/10 shadow-sm"
+                        loading="lazy"
+                      />
+                    ),
+                  }}
+                >
+                  {post.content_md}
+                </ReactMarkdown>
+              )}
             </div>
 
             {/* About the Author (simple v1) */}
@@ -373,7 +390,7 @@ const BlogDetail: React.FC = () => {
                           {r.title}
                         </h4>
                         <p className="text-xs text-slate-500 mt-2">
-                          {(r.published_at ? new Date(r.published_at) : new Date(r.created_at)).toLocaleDateString()} • {estimateReadTimeMinutes(r.content_md)} min read
+                          {(r.published_at ? new Date(r.published_at) : new Date(r.created_at)).toLocaleDateString()} • {estimateReadTimeMinutes(r.content_html || r.content_md)} min read
                         </p>
                       </Link>
                     ))

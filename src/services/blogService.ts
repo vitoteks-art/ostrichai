@@ -8,7 +8,13 @@ export interface BlogPost {
   title: string;
   slug: string;
   excerpt?: string;
+  // Legacy markdown field (kept for backward compatibility)
   content_md: string;
+
+  // New rich editor fields
+  content_json?: any;
+  content_html?: string;
+  toc?: Array<{ id: string; title: string; level?: number }>;
   status: BlogPostStatus;
   category?: string;
   tags: string[];

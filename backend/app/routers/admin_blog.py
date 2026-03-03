@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 from uuid import UUID
 from datetime import datetime, timezone
+import bleach
 
 from ..database import get_db
 from ..auth.dependencies import get_current_admin_user
@@ -22,6 +23,94 @@ router = APIRouter(tags=["Admin Blog"])
 
 POST_STATUSES = {"draft", "pending", "approved", "published"}
 COMMENT_STATUSES = {"pending", "approved", "rejected", "spam"}
+
+# Minimal HTML sanitization (admin-authored, but rendered publicly)
+_ALLOWED_TAGS = [
+    "p", "br",
+    "strong", "b", "em", "i", "u", "s",
+    "h2", "h3",
+    "ul", "ol", "li",
+    "blockquote",
+    "code", "pre",
+    "hr",
+    "a",
+    "img",
+]
+_ALLOWED_ATTRS = {
+    "a": ["href", "title", "rel", "target"],
+    "img": ["src", "alt", "title", "loading"],
+    "h2": ["id"],
+    "h3": ["id"],
+}
+_ALLOWED_PROTOCOLS = ["http", "https", "mailto"]
+
+
+def _sanitize_html(html: str | None) -> str | None:
+    if html is None:
+        return None
+    cleaned = bleach.clean(
+        html,
+        tags=_ALLOWED_TAGS,
+        attributes=_ALLOWED_ATTRS,
+        protocols=_ALLOWED_PROTOCOLS,
+        strip=True,
+    )
+    return cleaned
+
+
+def _slugify_heading(text: str) -> str:
+    import re
+
+    s = (text or "").strip().lower()
+    s = re.sub(r"[^a-z0-9\s-]", "", s)
+    s = re.sub(r"\s+", "-", s)
+    s = re.sub(r"-+", "-", s)
+    return s
+
+
+def _get_text_from_tiptap_node(node: dict | None) -> str:
+    if not node:
+        return ""
+    if node.get("type") == "text":
+        return node.get("text") or ""
+    out: list[str] = []
+    for c in node.get("content") or []:
+        out.append(_get_text_from_tiptap_node(c))
+    return "".join(out)
+
+
+def _extract_toc_from_tiptap_json(doc: dict | None):
+    if not doc:
+        return None
+
+    items: list[dict] = []
+
+    def walk(node: dict | None):
+        if not node:
+            return
+        if node.get("type") == "heading":
+            level = int((node.get("attrs") or {}).get("level") or 2)
+            title = _get_text_from_tiptap_node(node).strip()
+            if title:
+                items.append({"id": _slugify_heading(title), "title": title, "level": level})
+        for c in node.get("content") or []:
+            walk(c)
+
+    walk(doc)
+
+    # de-dupe ids
+    seen: dict[str, int] = {}
+    out: list[dict] = []
+    for it in items:
+        base = it["id"]
+        n = seen.get(base, 0) + 1
+        seen[base] = n
+        if n == 1:
+            out.append(it)
+        else:
+            out.append({**it, "id": f"{base}-{n}"})
+
+    return out
 
 
 def _audit(
@@ -103,11 +192,21 @@ async def admin_create_post(
     if existing:
         raise HTTPException(status_code=400, detail="Slug already exists")
 
+    # Require some content
+    if not (payload.content_json or (payload.content_md and payload.content_md.strip())):
+        raise HTTPException(status_code=400, detail="Post content is required")
+
+    toc = _extract_toc_from_tiptap_json(payload.content_json) if payload.content_json else None
+    content_html = _sanitize_html(payload.content_html) if payload.content_html else None
+
     post = BlogPost(
         title=payload.title,
         slug=payload.slug,
         excerpt=payload.excerpt,
-        content_md=payload.content_md,
+        content_md=(payload.content_md or ""),
+        content_json=payload.content_json,
+        content_html=content_html,
+        toc=toc,
         status=payload.status or "draft",
         category=payload.category,
         tags=payload.tags or [],
@@ -146,7 +245,17 @@ async def admin_update_post(
 
     from_status = post.status
 
-    for field, value in payload.dict(exclude_unset=True).items():
+    data = payload.dict(exclude_unset=True)
+
+    # Sanitize + compute derived fields
+    if "content_html" in data:
+        data["content_html"] = _sanitize_html(data.get("content_html"))
+
+    if "content_json" in data and data.get("content_json") is not None:
+        # always regenerate toc from json (don’t trust client toc)
+        data["toc"] = _extract_toc_from_tiptap_json(data.get("content_json"))
+
+    for field, value in data.items():
         if field == "status":
             continue
         setattr(post, field, value)
