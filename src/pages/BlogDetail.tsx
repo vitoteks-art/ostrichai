@@ -264,7 +264,7 @@ const BlogDetail: React.FC = () => {
               </div>
             )}
 
-            <div className="prose prose-slate dark:prose-invert max-w-none prose-h2:mt-10 prose-h2:mb-4 prose-h2:font-bold prose-h2:text-3xl prose-p:leading-relaxed">
+            <div className="prose prose-slate dark:prose-invert max-w-none text-left md:prose-lg prose-p:leading-7 md:prose-p:leading-8 prose-p:my-5 prose-li:my-2 prose-ul:my-5 prose-ol:my-5 prose-h2:mt-12 prose-h2:mb-5 prose-h2:font-black prose-h2:text-3xl md:prose-h2:text-4xl prose-h3:mt-10 prose-h3:mb-4 prose-h3:font-bold prose-h3:text-2xl">
               {post.content_html ? (
                 <div
                   // content_html is sanitized server-side before being stored
