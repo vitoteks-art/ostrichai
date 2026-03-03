@@ -163,6 +163,7 @@ const AdminBlogEditor: React.FC = () => {
 
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
+  const [slugAuto, setSlugAuto] = useState(true);
   const [excerpt, setExcerpt] = useState('');
   const [category, setCategory] = useState('');
   const [tags, setTags] = useState('');
@@ -206,6 +207,7 @@ const AdminBlogEditor: React.FC = () => {
         setPost(p);
         setTitle(p.title);
         setSlug(p.slug);
+        setSlugAuto(false);
         setExcerpt(p.excerpt || '');
         setCategory(p.category || '');
         setTags((p.tags || []).join(', '));
@@ -217,6 +219,7 @@ const AdminBlogEditor: React.FC = () => {
         editor?.commands.setContent(initialDoc, false);
       } else {
         // new post
+        setSlugAuto(true);
         editor?.commands.setContent({ type: 'doc', content: [{ type: 'paragraph' }] }, false);
       }
     } finally {
@@ -293,9 +296,8 @@ const AdminBlogEditor: React.FC = () => {
     const content_html = generateHTML(content_json, tiptapExtensions);
     const tocItems = extractTocFromTiptapJson(content_json);
 
-    const payload: any = {
+    const basePayload: any = {
       title,
-      slug,
       excerpt,
       // Keep legacy field populated (empty is fine) for older UI and search fallbacks
       content_md: post?.content_md || '',
@@ -309,10 +311,37 @@ const AdminBlogEditor: React.FC = () => {
       cover_image_url: coverImageUrl || null,
     };
 
+    const tryCreateWithSlug = async (candidateSlug: string) => {
+      const payload = { ...basePayload, slug: candidateSlug };
+      return BlogService.adminCreatePost(payload);
+    };
+
     if (isNew) {
-      const created = await BlogService.adminCreatePost(payload);
-      navigate(`/admin/blog/posts/${created.id}/edit`, { replace: true });
+      const initialSlug = slugify(slug || title);
+      const maxTries = slugAuto ? 15 : 1;
+
+      let lastErr: any = null;
+      for (let i = 0; i < maxTries; i++) {
+        const candidate = i === 0 ? initialSlug : `${initialSlug}-${i + 1}`;
+        try {
+          const created = await tryCreateWithSlug(candidate);
+          // if slug was auto, keep it synced to the chosen slug
+          setSlug(candidate);
+          setSlugAuto(slugAuto);
+          navigate(`/admin/blog/posts/${created.id}/edit`, { replace: true });
+          return;
+        } catch (e: any) {
+          lastErr = e;
+          const msg = String(e?.message || '');
+          if (msg.toLowerCase().includes('slug already exists') && slugAuto) {
+            continue;
+          }
+          throw e;
+        }
+      }
+      throw lastErr;
     } else if (id) {
+      const payload = { ...basePayload, slug };
       const updated = await BlogService.adminUpdatePost(id, payload);
       setPost(updated);
     }
@@ -399,8 +428,11 @@ const AdminBlogEditor: React.FC = () => {
                     <Input
                       value={title}
                       onChange={(e) => {
-                        setTitle(e.target.value);
-                        if (isNew && !slug) setSlug(slugify(e.target.value));
+                        const nextTitle = e.target.value;
+                        setTitle(nextTitle);
+                        if (isNew && slugAuto) {
+                          setSlug(slugify(nextTitle));
+                        }
                       }}
                       placeholder="Post title"
                     />
@@ -453,8 +485,36 @@ const AdminBlogEditor: React.FC = () => {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <label className="text-xs text-muted-foreground">Slug</label>
-                      <Input value={slug} onChange={(e) => setSlug(slugify(e.target.value))} placeholder="my-post-slug" />
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="text-xs text-muted-foreground">Slug</label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-muted-foreground">
+                            {isNew ? (slugAuto ? 'auto' : 'manual') : 'manual'}
+                          </span>
+                          {isNew && !slugAuto && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => {
+                                setSlugAuto(true);
+                                setSlug(slugify(title));
+                              }}
+                            >
+                              Reset
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      <Input
+                        value={slug}
+                        onChange={(e) => {
+                          setSlugAuto(false);
+                          setSlug(slugify(e.target.value));
+                        }}
+                        placeholder="my-post-slug"
+                      />
                     </div>
                     <div>
                       <label className="text-xs text-muted-foreground">Excerpt</label>
