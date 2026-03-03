@@ -232,7 +232,13 @@ const AdminBlogEditor: React.FC = () => {
   }, [id, editor]);
 
   const apiBase = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api').replace(/\/$/, '');
-  const fileBase = apiBase.replace(/\/api$/, '');
+  const fileOrigin = (() => {
+    try {
+      return new URL(apiBase).origin;
+    } catch {
+      return window.location.origin;
+    }
+  })();
 
   const uploadLocalImage = async (file: File, kind: 'cover' | 'inline') => {
     const token = localStorage.getItem('auth_token');
@@ -258,7 +264,10 @@ const AdminBlogEditor: React.FC = () => {
 
     const data = await resp.json();
     const path = data.path as string;
-    return `${fileBase}${path}`;
+
+    // Ensure absolute URL for <img src> so it always loads (even if API base is relative)
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    return `${fileOrigin}${path.startsWith('/') ? '' : '/'}${path}`;
   };
 
   const uploadCoverImage = async (file: File) => {
