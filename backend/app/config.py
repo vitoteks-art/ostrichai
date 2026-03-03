@@ -19,7 +19,10 @@ class Settings(BaseSettings):
         "https://getostrichai.com",
         "http://getostrichai.com",
         "http://localhost:3000",
-        "http://localhost:5173"
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://72.60.215.204:5173",
+        "http://72.60.215.204:5174"
     ]
 
     @field_validator("allowed_origins", mode="before")
