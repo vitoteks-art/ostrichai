@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import datetime
+from datetime import datetime, timedelta
 import sys
 from ..database import get_db
 from ..auth.dependencies import get_current_user
-from ..models import User, PaymentTransaction, SubscriptionPlan
+from ..models import User, PaymentTransaction, SubscriptionPlan, ReferralConversion, ReferralReward, ReferralWallet
 from ..schemas.payments import PaymentCreate, PaymentResponse, WebhookEvent, PaymentVerificationResponse, TransactionRecord, TransactionUpdate
 import uuid
 import httpx
@@ -356,7 +356,61 @@ async def record_transaction(
         db.add(transaction)
         db.commit()
         db.refresh(transaction)
-        
+
+        # Referral reward processing: first successful payment only
+        if transaction.status == "success":
+            success_count = db.query(PaymentTransaction).filter(
+                PaymentTransaction.user_id == current_user.id,
+                PaymentTransaction.status == "success"
+            ).count()
+
+            if success_count == 1:
+                conversion = db.query(ReferralConversion).filter(
+                    ReferralConversion.converted_user_id == current_user.id,
+                    ReferralConversion.conversion_type == "signup"
+                ).order_by(ReferralConversion.created_at.desc()).first()
+
+                if conversion:
+                    expires_at = conversion.expires_at or (conversion.created_at + timedelta(days=30))
+                    if expires_at >= datetime.utcnow():
+                        existing_reward = db.query(ReferralReward).filter(
+                            ReferralReward.referral_conversion_id == conversion.id
+                        ).first()
+
+                        if not existing_reward:
+                            amount_cents = int(round(transaction.amount_cents * 0.10))
+                            if amount_cents > 0:
+                                reward = ReferralReward(
+                                    referral_conversion_id=conversion.id,
+                                    referrer_id=conversion.referrer_id,
+                                    referred_user_id=conversion.converted_user_id,
+                                    amount_cents=amount_cents,
+                                    currency=transaction.currency,
+                                    status="credited",
+                                    reward_metadata={
+                                        "payment_reference": transaction.provider_reference,
+                                        "payment_amount_cents": transaction.amount_cents
+                                    }
+                                )
+                                db.add(reward)
+
+                                wallet = db.query(ReferralWallet).filter(
+                                    ReferralWallet.user_id == conversion.referrer_id
+                                ).first()
+                                if not wallet:
+                                    wallet = ReferralWallet(
+                                        user_id=conversion.referrer_id,
+                                        balance_cents=0,
+                                        pending_cents=0,
+                                        currency=transaction.currency
+                                    )
+                                    db.add(wallet)
+
+                                wallet.balance_cents += amount_cents
+                                conversion.status = "qualified"
+                                conversion.qualified_at = datetime.utcnow()
+                                db.commit()
+
         return PaymentResponse(
             id=str(transaction.id),
             amount_cents=transaction.amount_cents,

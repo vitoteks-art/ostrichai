@@ -84,6 +84,56 @@ class RewardRedeemResponse(BaseModel):
     status: str
     created_at: datetime
 
+class ReferralEarningsSummary(BaseModel):
+    total_clicks: int
+    total_signups: int
+    total_qualified: int
+    earned_cents: int
+    pending_cents: int
+    available_cents: int
+    currency: str
+
+class ReferralEarningsReferralItem(BaseModel):
+    referred_user_id: str
+    referred_email: Optional[str] = None
+    signup_date: datetime
+    status: str
+    amount_cents: Optional[int] = None
+
+class ReferralRewardItem(BaseModel):
+    id: str
+    referred_email: Optional[str] = None
+    amount_cents: int
+    currency: str
+    status: str
+    created_at: datetime
+
+class ReferralWithdrawalItem(BaseModel):
+    id: str
+    amount_cents: int
+    currency: str
+    method: str
+    status: str
+    kyc_status: str
+    created_at: datetime
+
+class ReferralWithdrawalRequest(BaseModel):
+    amount_cents: int
+    method: str
+    payout_details: Dict[str, Any]
+
+class ReferralRedeemCreditsRequest(BaseModel):
+    amount_cents: int
+
+class KycStatusResponse(BaseModel):
+    status: str
+    provider: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+class KycStartRequest(BaseModel):
+    provider: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+
 class ReferralFormSubmissionCreate(BaseModel):
     campaign_id: UUID
     referral_code: Optional[str] = None

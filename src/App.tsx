@@ -71,6 +71,7 @@ import BookingMeetingTypes from "./pages/BookingMeetingTypes";
 import BookingSettings from "./pages/BookingSettings";
 import PublicBooking from "./pages/PublicBooking";
 import ReferralLanding from "./pages/ReferralLanding";
+import ReferralEarnings from "./pages/ReferralEarnings";
 import BackgroundRemover from "./pages/BackgroundRemover";
 import OAuthCallback from "./pages/OAuthCallback";
 import ConnectedAccounts from "./pages/ConnectedAccounts";
@@ -312,6 +313,12 @@ const App = () => (
 
                     {/* Referral Landing Page - Public access for referral links */}
                     <Route path="/ref/:campaignId/:referralCode" element={<ReferralLanding />} />
+
+                    <Route path="/referrals" element={
+                      <ProtectedRoute>
+                        <ReferralEarnings />
+                      </ProtectedRoute>
+                    } />
 
                     {/* Admin Routes */}
                     <Route path="/admin" element={

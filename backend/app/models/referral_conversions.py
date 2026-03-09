@@ -14,9 +14,11 @@ class ReferralConversion(Base):
     conversion_type = Column(String, nullable=False, default='signup')  # 'signup', 'subscription', 'purchase'
     points_awarded = Column(Integer, default=0)
     reward_tier = Column(String)
-    status = Column(String, nullable=False, default='pending')  # 'pending', 'approved', 'rejected', 'completed'
+    status = Column(String, nullable=False, default='pending')  # 'pending', 'approved', 'rejected', 'completed', 'qualified'
     conversion_value = Column(Integer)
     conversion_metadata = Column(JSON, default=dict)
+    expires_at = Column(DateTime(timezone=True))
+    qualified_at = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

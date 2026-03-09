@@ -15,6 +15,10 @@ from .referral_campaigns import ReferralCampaign
 from .referral_links import ReferralLink
 from .referral_clicks import ReferralClick
 from .referral_conversions import ReferralConversion
+from .referral_rewards import ReferralReward
+from .referral_wallets import ReferralWallet
+from .referral_withdrawals import ReferralWithdrawal
+from .kyc_profiles import KycProfile
 from .user_points import UserPoints
 from .reward_redemptions import RewardRedemption
 from .referral_analytics import ReferralAnalytics
@@ -46,6 +50,10 @@ __all__ = [
     "ReferralLink",
     "ReferralClick",
     "ReferralConversion",
+    "ReferralReward",
+    "ReferralWallet",
+    "ReferralWithdrawal",
+    "KycProfile",
     "UserPoints",
     "RewardRedemption",
     "ReferralAnalytics",

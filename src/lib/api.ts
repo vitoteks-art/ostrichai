@@ -527,6 +527,48 @@ class ApiClient {
       body: JSON.stringify(data),
     });
   }
+
+  async getReferralEarningsSummary() {
+    return this.request('/referrals/earnings/summary');
+  }
+
+  async getReferralEarningsReferrals() {
+    return this.request('/referrals/earnings/referrals');
+  }
+
+  async getReferralEarningsRewards() {
+    return this.request('/referrals/earnings/rewards');
+  }
+
+  async getReferralEarningsWithdrawals() {
+    return this.request('/referrals/earnings/withdrawals');
+  }
+
+  async requestReferralWithdrawal(data: any) {
+    return this.request('/referrals/earnings/withdraw', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async redeemReferralCredits(data: any) {
+    return this.request('/referrals/earnings/redeem-credits', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getReferralKycStatus() {
+    return this.request('/referrals/earnings/kyc');
+  }
+
+  async startReferralKyc(data: any) {
+    return this.request('/referrals/earnings/kyc', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
 }
 
 export const apiClient = new ApiClient();

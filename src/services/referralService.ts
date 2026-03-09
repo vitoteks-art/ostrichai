@@ -154,6 +154,50 @@ export interface ReferralAnalytics {
   updated_at: string;
 }
 
+
+export interface ReferralEarningsSummary {
+  total_clicks: number;
+  total_signups: number;
+  total_qualified: number;
+  earned_cents: number;
+  pending_cents: number;
+  available_cents: number;
+  currency: string;
+}
+
+export interface ReferralEarningsReferralItem {
+  referred_user_id: string;
+  referred_email?: string | null;
+  signup_date: string;
+  status: string;
+  amount_cents?: number | null;
+}
+
+export interface ReferralRewardItem {
+  id: string;
+  referred_email?: string | null;
+  amount_cents: number;
+  currency: string;
+  status: string;
+  created_at: string;
+}
+
+export interface ReferralWithdrawalItem {
+  id: string;
+  amount_cents: number;
+  currency: string;
+  method: string;
+  status: string;
+  kyc_status: string;
+  created_at: string;
+}
+
+export interface KycStatusResponse {
+  status: string;
+  provider?: string | null;
+  metadata?: Record<string, any> | null;
+}
+
 export class ReferralService {
   /**
    * Create a new referral campaign via API
@@ -612,4 +656,88 @@ export class ReferralService {
       return { success: false, error: error.message || 'Failed to cleanup submissions' };
     }
   }
+
+  /**
+   * Referral earnings summary
+   */
+  static async getEarningsSummary(): Promise<{ success: boolean; data?: ReferralEarningsSummary; error?: string }> {
+    try {
+      const data = await apiClient.getReferralEarningsSummary();
+      return { success: true, data };
+    } catch (error: any) {
+      console.error('❌ Error getting earnings summary:', error);
+      return { success: false, error: error.message || 'Failed to get earnings summary' };
+    }
+  }
+
+  static async getEarningsReferrals(): Promise<{ success: boolean; data?: ReferralEarningsReferralItem[]; error?: string }> {
+    try {
+      const data = await apiClient.getReferralEarningsReferrals();
+      return { success: true, data };
+    } catch (error: any) {
+      console.error('❌ Error getting referrals list:', error);
+      return { success: false, error: error.message || 'Failed to get referrals list' };
+    }
+  }
+
+  static async getEarningsRewards(): Promise<{ success: boolean; data?: ReferralRewardItem[]; error?: string }> {
+    try {
+      const data = await apiClient.getReferralEarningsRewards();
+      return { success: true, data };
+    } catch (error: any) {
+      console.error('❌ Error getting rewards:', error);
+      return { success: false, error: error.message || 'Failed to get rewards' };
+    }
+  }
+
+  static async getEarningsWithdrawals(): Promise<{ success: boolean; data?: ReferralWithdrawalItem[]; error?: string }> {
+    try {
+      const data = await apiClient.getReferralEarningsWithdrawals();
+      return { success: true, data };
+    } catch (error: any) {
+      console.error('❌ Error getting withdrawals:', error);
+      return { success: false, error: error.message || 'Failed to get withdrawals' };
+    }
+  }
+
+  static async requestWithdrawal(payload: { amount_cents: number; method: string; payout_details: Record<string, any> }): Promise<{ success: boolean; data?: ReferralWithdrawalItem; error?: string }> {
+    try {
+      const data = await apiClient.requestReferralWithdrawal(payload);
+      return { success: true, data };
+    } catch (error: any) {
+      console.error('❌ Error requesting withdrawal:', error);
+      return { success: false, error: error.message || 'Failed to request withdrawal' };
+    }
+  }
+
+  static async redeemCredits(amount_cents: number): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      const data = await apiClient.redeemReferralCredits({ amount_cents });
+      return { success: true, data };
+    } catch (error: any) {
+      console.error('❌ Error redeeming credits:', error);
+      return { success: false, error: error.message || 'Failed to redeem credits' };
+    }
+  }
+
+  static async getKycStatus(): Promise<{ success: boolean; data?: KycStatusResponse; error?: string }> {
+    try {
+      const data = await apiClient.getReferralKycStatus();
+      return { success: true, data };
+    } catch (error: any) {
+      console.error('❌ Error getting KYC status:', error);
+      return { success: false, error: error.message || 'Failed to get KYC status' };
+    }
+  }
+
+  static async startKyc(payload: { provider?: string; metadata?: Record<string, any> }): Promise<{ success: boolean; data?: KycStatusResponse; error?: string }> {
+    try {
+      const data = await apiClient.startReferralKyc(payload);
+      return { success: true, data };
+    } catch (error: any) {
+      console.error('❌ Error starting KYC:', error);
+      return { success: false, error: error.message || 'Failed to start KYC' };
+    }
+  }
+
 }

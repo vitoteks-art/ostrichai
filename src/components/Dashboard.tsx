@@ -40,7 +40,7 @@ import {
   CreditCard,
   Share2
 } from 'lucide-react';
-import ReferralDashboard from './ReferralDashboard';
+import ReferralEarningsWidget from './ReferralEarningsWidget';
 
 interface DashboardStats {
   totalProjects: number;
@@ -361,7 +361,7 @@ const Dashboard: React.FC = () => {
 
       {/* Referral Program Section */}
       <div className="mb-8">
-        <ReferralDashboard />
+        <ReferralEarningsWidget />
       </div>
 
       {/* Stats Overview */}
