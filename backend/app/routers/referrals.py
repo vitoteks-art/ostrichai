@@ -707,7 +707,7 @@ async def get_kyc_status(
     db: Session = Depends(get_db)
 ):
     profile = get_or_create_kyc(db, current_user.id)
-    return KycStatusResponse(status=profile.status, provider=profile.provider, metadata=profile.metadata)
+    return KycStatusResponse(status=profile.status, provider=profile.provider, metadata=profile.kyc_metadata)
 
 
 @router.post("/earnings/kyc", response_model=KycStatusResponse)
@@ -719,10 +719,10 @@ async def start_kyc(
     profile = get_or_create_kyc(db, current_user.id)
     profile.status = "pending"
     profile.provider = request.provider
-    profile.metadata = request.metadata or {}
+    profile.kyc_metadata = request.metadata or {}
     db.commit()
     db.refresh(profile)
-    return KycStatusResponse(status=profile.status, provider=profile.provider, metadata=profile.metadata)
+    return KycStatusResponse(status=profile.status, provider=profile.provider, metadata=profile.kyc_metadata)
 
 
 @router.post("/admin/withdrawals/{withdrawal_id}/approve")

@@ -37,10 +37,14 @@ CREATE TABLE IF NOT EXISTS kyc_profiles (
   user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   status TEXT NOT NULL DEFAULT 'required',
   provider TEXT,
-  metadata JSONB DEFAULT '{}'::jsonb,
+  kyc_metadata JSONB DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- If table already exists with `metadata`, rename it
+ALTER TABLE kyc_profiles
+  RENAME COLUMN IF EXISTS metadata TO kyc_metadata;
 
 -- Withdrawals
 CREATE TABLE IF NOT EXISTS referral_withdrawals (
